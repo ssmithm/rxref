@@ -1,0 +1,194 @@
+#' Resolve a free-text drug name to ingredient CUIs (IN/PIN)
+#'
+#' Uses RxNav approximateTerm, then filters candidates to TTY IN/PIN.
+#'
+#' @param term Character vector (free text)
+#' @param max_entries Max approximate-term candidates per input
+#' @param include_pin Logical; include PIN (precise ingredient) along with IN
+#' @return tibble: input, rxcui, name, tty, score
+#' @examples
+#' \donttest{
+#' find_ingredients("metformin")
+#' }
+#' @export
+find_ingredients <- function(term, max_entries = 10, include_pin = FALSE) {
+  stopifnot(is.character(term))
+  purrr::map_dfr(term, function(t) {
+    approx <- rx_get_json("/approximateTerm", query = list(term = t, maxEntries = max_entries))
+    cand <- approx$approximateGroup$candidate
+    if (is.null(cand) || !length(cand)) {
+      return(tibble::tibble(input = t, rxcui = NA_character_, name = NA_character_, tty = NA_character_, score = NA_real_))
+    }
+    # fetch properties for TTY/name; keep IN/PIN
+    rows <- purrr::map_dfr(cand, function(c) {
+      id <- null2na(c$rxcui)
+      pr <- if (!is.na(id)) rx_get_json(paste0("/rxcui/", id, "/properties")) else NULL
+      tibble::tibble(
+        input = t,
+        rxcui = id,
+        name  = null2na(pr$properties$name),
+        tty   = null2na(pr$properties$tty),
+        score = suppressWarnings(as.numeric(null2na(c$score)))
+      )
+    })
+    keep_ttys <- if (include_pin) c("IN","PIN") else "IN"
+    rows <- dplyr::filter(rows, .data$tty %in% keep_ttys)
+    dplyr::arrange(rows, dplyr::desc(.data$score))
+  }) |>
+    dplyr::distinct()
+}
+
+#' Expand ingredient CUIs to product CUIs that truly contain the ingredient
+#'
+#' Gets related SCD/SBD (and optionally packs), then **verifies** each product
+#' has IN/PIN relations that include the target ingredient CUI. This avoids
+#' spurious relations like "tablet" that aren't specific to the ingredient.
+#'
+#' @param ingredient_rxcui Character vector of IN or PIN CUIs
+#' @param include_brand Logical; include SBD (brand)
+#' @param include_packs Logical; include GPCK/BPCK
+#' @param include_components Logical; include SCDC/SBDC component-level items
+#' @param include_combos Logical; if FALSE, keep only single-ingredient products
+#' @return tibble: ingredient_rxcui, product_rxcui, name, tty, n_ingredients
+#' @examples
+#' \donttest{
+#' ing <- find_ingredients("metformin")$rxcui[1]
+#' products_for_ingredients(ing)
+#' }
+#' @export
+products_for_ingredients <- function(ingredient_rxcui,
+                                     include_brand = TRUE,
+                                     include_packs = TRUE,
+                                     include_components = FALSE,
+                                     include_combos = TRUE) {
+  stopifnot(is.character(ingredient_rxcui))
+  # which TTYs to fetch as candidate products
+  ttys <- c("SCD")
+  if (include_brand) ttys <- c(ttys, "SBD")
+  if (include_packs) ttys <- c(ttys, "GPCK", "BPCK")
+  if (include_components) ttys <- c(ttys, "SCDC", "SBDC")
+  tty_param <- paste(ttys, collapse = "+")
+
+  purrr::map_dfr(ingredient_rxcui, function(ing) {
+    rel <- tryCatch(
+      rx_get_json(paste0("/rxcui/", ing, "/related"), query = list(tty = tty_param)),
+      error = function(e) NULL
+    )
+    groups <- rel$relatedGroup$conceptGroup
+    if (is.null(groups)) {
+      return(tibble::tibble(
+        ingredient_rxcui = ing,
+        product_rxcui = NA_character_,
+        name = NA_character_,
+        tty = NA_character_,
+        n_ingredients = NA_integer_
+      ))
+    }
+    # Flatten candidate products
+    concepts <- purrr::map(groups, "conceptProperties") |> purrr::compact() |> unlist(recursive = FALSE)
+    if (!length(concepts)) {
+      return(tibble::tibble(
+        ingredient_rxcui = character(),
+        product_rxcui = character(),
+        name = character(),
+        tty = character(),
+        n_ingredients = integer()
+      ))
+    }
+    prods <- purrr::map_dfr(concepts, function(cp) {
+      tibble::tibble(product_rxcui = null2na(cp$rxcui),
+                     name          = null2na(cp$name),
+                     tty           = null2na(cp$tty))
+    })
+    prods <- dplyr::distinct(prods)
+    prods <- dplyr::filter(prods, !is.na(.data$product_rxcui))
+    if (!nrow(prods)) {
+      return(tibble::tibble(
+        ingredient_rxcui = character(),
+        product_rxcui = character(),
+        name = character(),
+        tty = character(),
+        n_ingredients = integer()
+      ))
+    }
+
+    # Verify each product actually contains the ingredient: product -> related IN/PIN
+    checked <- purrr::map_dfr(prods$product_rxcui, function(p) {
+      rel_ing <- tryCatch(
+        rx_get_json(paste0("/rxcui/", p, "/related"), query = list(tty = "IN+PIN")),
+        error = function(e) NULL
+      )
+      gs <- rel_ing$relatedGroup$conceptGroup
+      cps <- if (length(gs)) purrr::map(gs, "conceptProperties") |> purrr::compact() |> unlist(recursive = FALSE) else list()
+      ing_ids <- if (length(cps)) unique(vapply(cps, function(z) as.character(z$rxcui), character(1))) else character(0)
+      tibble::tibble(product_rxcui = p, ingredient_rxcui = ing, n_ingredients = length(unique(ing_ids)), contains = ing %in% ing_ids)
+    })
+    out <- prods |>
+      dplyr::left_join(checked, by = "product_rxcui") |>
+      dplyr::filter(.data$contains %in% TRUE)
+
+    if (!include_combos) {
+      out <- dplyr::filter(out, .data$n_ingredients <= 1L)
+    }
+    dplyr::select(out, .data$ingredient_rxcui, .data$product_rxcui, .data$name, .data$tty, .data$n_ingredients)
+  }) |>
+    dplyr::distinct()
+}
+
+#' Search free-text drug name and return product CUIs and/or NDCs
+#'
+#' High-level convenience: free text -> ingredient(s) -> verified product CUIs,
+#' optionally to NDCs with status filtering.
+#'
+#' @param term Character vector; free-text drug names
+#' @param return One of c("rxcui","ndc","both")
+#' @param ndc_status Optional character vector to filter NDCs, e.g., "ACTIVE"
+#' @param ... Passed to products_for_ingredients() (e.g., include_brand, include_combos)
+#' @return If return = "rxcui": tibble of products.
+#'   If "ndc": tibble ingredient_rxcui, product_rxcui, ndc11, ndc_status.
+#'   If "both": a list(list(products=..., ndcs=...))
+#' @examples
+#' if (identical(Sys.getenv("RXREF_ONLINE"), "1")) {
+#' # All metformin product CUIs (SCD/SBD, packs) that truly contain metformin
+#' prods <- search_drug("metformin", return = "rxcui")
+#' head(prods)
+#'
+#' # Only single-ingredient products, and their ACTIVE NDCs
+#' res <- search_drug("metformin", return = "ndc", ndc_status = "ACTIVE", include_combos = FALSE)
+#' head(res)
+#' }
+#' @export
+search_drug <- function(term,
+                        return = c("rxcui","ndc","both"),
+                        ndc_status = NULL,
+                        ...) {
+  return <- match.arg(return)
+  ings <- find_ingredients(term)
+  ing_ids <- unique(stats::na.omit(ings$rxcui))
+  if (!length(ing_ids)) {
+    empty_products <- tibble::tibble(ingredient_rxcui = character(), product_rxcui = character(),
+                                     name = character(), tty = character(), n_ingredients = integer())
+    if (return == "rxcui") return(empty_products)
+    empty_ndc <- tibble::tibble(ingredient_rxcui = character(), product_rxcui = character(),
+                                ndc11 = character(), ndc_status = character())
+    if (return == "ndc") return(empty_ndc)
+    return(list(products = empty_products, ndcs = empty_ndc))
+  }
+
+  prods <- products_for_ingredients(ing_ids, ...)
+  if (return == "rxcui") return(prods)
+
+  # map each product_rxcui to NDCs (optionally filter by status)
+  ndcs <- purrr::map_dfr(unique(prods$product_rxcui), function(p) {
+    out <- map_rxcui_to_ndc(p, status = ndc_status)
+    if (!is.null(ndc_status) && nrow(out) == 0) {
+      return(tibble::tibble(product_rxcui = p, ndc11 = character(0), ndc_status = character(0)))
+    }
+    out
+  }) |>
+    dplyr::left_join(dplyr::select(prods, product_rxcui, ingredient_rxcui), by = "product_rxcui") |>
+    dplyr::relocate(.data$ingredient_rxcui, .before = 1L)
+
+  if (return == "ndc") return(ndcs)
+  list(products = prods, ndcs = ndcs)
+}
