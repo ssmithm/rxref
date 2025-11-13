@@ -20,6 +20,7 @@ reference:
       - resolve
       - get_properties
       - map_to
+      - ndc_status
 
   - title: "RxCUI<–>NDC mapping"
     contents:
@@ -32,3 +33,12 @@ reference:
       - products_for_ingredients
       - search_drug
       - tty_catalogue
+
+  - title: "Clinical utilities"
+    contents:
+      - get_clinical_attributes
+
+  - title: "Configurations"
+    contents:
+      - set_backend
+      - rxref_conf
