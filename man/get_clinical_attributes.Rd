@@ -10,11 +10,14 @@ get_clinical_attributes(rxcui)
 \item{rxcui}{Character vector of RxCUIs}
 }
 \value{
-tibble with rxcui, related_rxcui, name, tty, strength, dose_form
+A tibble with 6 columns: \code{rxcui}, \code{related_rxcui}, \code{name}, \code{tty}, \code{strength}, \code{dose_form}
 }
 \description{
 If \code{rxcui} is already a clinical drug (SCD/SBD), parse attributes directly
 from its own name. Otherwise, query \code{/rxcui/{id}/related?tty=SCD,SBD} and parse.
+}
+\details{
+Note: This works, but is still in active development.
 }
 \examples{
 \donttest{
