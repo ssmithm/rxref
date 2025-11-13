@@ -1,0 +1,34 @@
+url: http://www.stevenmsmith.org/rxref/
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [reference, articles, news]
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: "rxref: Getting Started"
+          href: articles/rxref_intro.html
+        - text: "Case study: GLP-1 receptor agonists"
+          href: articles/case_study_glp1ra.html
+
+reference:
+  - title: "Core verbs"
+    contents:
+      - resolve
+      - get_properties
+      - map_to
+
+  - title: "RxCUI<–>NDC mapping"
+    contents:
+      - map_rxcui_to_ndc
+      - map_ndc_to_rxcui
+
+  - title: "Search & catalog utilities"
+    contents:
+      - find_ingredients
+      - products_for_ingredients
+      - search_drug
+      - tty_catalogue

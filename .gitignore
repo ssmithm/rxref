@@ -1,3 +1,10 @@
 inst/doc
 /doc/
 /Meta/
+.Rproj.user
+.Rdata
+.Rhistory
+.Ruserdata
+.DS_Store
+.Rcheck/
+docs

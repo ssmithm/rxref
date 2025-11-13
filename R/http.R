@@ -28,7 +28,6 @@ rx_get_json <- (function(){
       path_json <- if (grepl("\\.json$", path)) path else paste0(path, ".json")
       req <- rx_http_client() |>
         httr2::req_url_path_append(path_json) |>
-        # FIX: use explode to repeat vector keys (e.g., tty=SCD&tty=SBD)
         httr2::req_url_query(!!!query, .multi = "explode")
       resp <- httr2::req_perform(req)
       httr2::resp_check_status(resp)

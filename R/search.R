@@ -9,7 +9,7 @@
 # - Components: SCDC, SBDC
 # - Drug forms / groups: SCDF, SBDF, SCDFP, SBDFP, SCDG, SCDGP
 # - Names / ingredients: BN (brand name), MIN (multi-ingredient), IN (ingredients)
-.rxref_extended_ttys <- c("SCD", "SBD", "GPCK", "BPCK","SCDC","SBDC","SCDF","SBDF","SCDFP","SBDFP","SCDG","SCDGP","BN","MIN","IN")
+.rxref_extended_ttys <- c("SCD","SBD","GPCK","BPCK","SCDC","SBDC","SCDF","SBDF","SCDFP","SBDFP","SCDG","SCDGP","BN","MIN","IN")
 
 
 #' Resolve a free-text drug name to ingredient CUIs (IN/PIN)

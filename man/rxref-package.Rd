@@ -13,6 +13,7 @@ Configure behavior with \code{\link[=rxref_conf]{rxref_conf()}} and \code{\link[
 Useful links:
 \itemize{
   \item \url{https://github.com/ssmithm/rxref}
+  \item \url{http://www.stevenmsmith.org/rxref/}
   \item Report bugs at \url{https://github.com/ssmithm/rxref/issues}
 }
 

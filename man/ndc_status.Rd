@@ -10,8 +10,11 @@ ndc_status(ndc)
 \item{ndc}{character vector; hyphenated or digits}
 }
 \value{
-tibble ndc_input, ndc11, ndc_hyph, status
+A tibble with three columns: ndc_input, ndc11, ndc_hyph, status
 }
 \description{
-Get RxNav status for NDCs
+\code{ndc_status()} requests the status of an NDC entry for one or more user-supplied
+NDC numbers. The returned status will be one "ACTIVE", "OBSOLETE", or "UNSPECIFIED".
+On occasion, a NULL value may be pulled (resulting in an \code{NA} in the returned tibble),
+when RxNorm has no status for a given NDC, or if an invalid NDC is supplied.
 }

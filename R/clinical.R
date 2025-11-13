@@ -3,8 +3,10 @@
 #' If `rxcui` is already a clinical drug (SCD/SBD), parse attributes directly
 #' from its own name. Otherwise, query \code{/rxcui/{id}/related?tty=SCD,SBD} and parse.
 #'
+#' *Note:* This works, but is still in active development.
+#'
 #' @param rxcui Character vector of RxCUIs
-#' @return tibble with rxcui, related_rxcui, name, tty, strength, dose_form
+#' @return A tibble with 6 columns: `rxcui`, `related_rxcui`, `name`, `tty`, `strength`, `dose_form`
 #' @examples
 #' \donttest{
 #' get_clinical_attributes(c("861007","860975")) |>
