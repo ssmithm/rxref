@@ -111,13 +111,6 @@ aggregate(
 - [`ndc_status()`](http://www.stevenmsmith.org/rxref/reference/ndc_status.md)
   : Get RxNav status for NDCs
 
-## RxCUI\<–\>NDC mapping
-
-- [`map_to()`](http://www.stevenmsmith.org/rxref/reference/map_to.md)
-  [`map_ndc_to_rxcui()`](http://www.stevenmsmith.org/rxref/reference/map_to.md)
-  [`map_rxcui_to_ndc()`](http://www.stevenmsmith.org/rxref/reference/map_to.md)
-  : Map between NDC and RxCUI in either direction
-
 ## Search & catalog utilities
 
 - [`find_ingredients()`](http://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
