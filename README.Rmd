@@ -39,19 +39,20 @@ This is a basic example for querying RxCUIs associated with lisinopril (a blood 
 
 ```{r ex1}
 library(rxref)
-library(reactable)
 lisinopril.ing <- find_ingredients('lisinopril')
-lisinopril.ing |> reactable()
+lisinopril.ing |> knitr::kable()
 
 lisinopril.rxcuis <- products_for_ingredients(lisinopril.ing$rxcui, ttys = c("SCD", "SBD"), include_combos = TRUE)
 
 # Resulting table of all related products with TTY in {SCD, SBD}
-lisinopril.rxcuis |> reactable()
+lisinopril.rxcuis |> 
+  dplyr::mutate(name = paste0("`", name, "`")) |> 
+  knitr::kable()
 
 # Count of TTYs in resulting table
 aggregate(
   x = list(count = rep(1, nrow(lisinopril.rxcuis))), 
   by = list(tty = lisinopril.rxcuis$tty), 
   FUN = sum
-) |> reactable()
+) |> knitr::kable()
 ```
