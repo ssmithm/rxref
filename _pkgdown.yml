@@ -22,11 +22,6 @@ reference:
       - map_to
       - ndc_status
 
-  - title: "RxCUI<–>NDC mapping"
-    contents:
-      - map_rxcui_to_ndc
-      - map_ndc_to_rxcui
-
   - title: "Search & catalog utilities"
     contents:
       - find_ingredients
