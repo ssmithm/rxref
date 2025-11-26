@@ -36,7 +36,7 @@ resolve <- function(x, type = c("auto","name","rxcui","ndc"), max_entries = 1) {
 resolve_name <- function(term, max_entries = 1) {
   # spelling suggestions (optional)
   # NOTE: this is mostly a hint; we don't use it downstream here
-  #       but it can be useful later for UX / alternative candidates
+  #       but may be useful later for UX / alternative candidates?
   try({
     rx_get_json("/spellingsuggestions", query = list(name = term))
   }, silent = TRUE)

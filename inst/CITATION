@@ -1,0 +1,10 @@
+citHeader("To cite rxref in publications, use:")
+
+citEntry(
+  entry    = "Manual",
+  title    = "rxref: Tidy RxNorm Utilities",
+  author   = person("Steven", "Smith"),
+  year     = "2025",
+  note     = "R package version 0.1.0",
+  url      = "https://www.stevenmsmith.org/rxref"
+)

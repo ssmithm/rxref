@@ -1,6 +1,6 @@
 Package: rxref
 Title: Tidy Utilities for RxNorm and NDC Resolution
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
 	c(person(given = "Steven", family = "Smith", email = "ssmith@cop.ufl.edu", role = c("aut", "cre")))
 Description: A tidy, vectorized R interface to the RxNorm / RxNav API for resolving free-text drug strings, RxCUIs, and NDCs, retrieving core drug properties, and mapping identifiers in both directions.

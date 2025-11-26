@@ -1,4 +1,4 @@
-#' rxref: Tidy RxNorm utilities (API-first)
+#' rxref: Tidy RxNorm utilities
 #'
 #' Core exported verbs: [resolve()], [get_properties()], [map_to()].
 #' Configure behavior with [rxref_conf()] and [set_backend()].

@@ -1,10 +1,10 @@
-# File: R/search.R
-
 # Some helpers:
 # Default product-ish TTYs (good for mapping to NDC)
 .rxref_default_ttys <- c("SCD", "SBD", "GPCK", "BPCK")
 
-# Extended “structure/group” TTYs you may want for richer CUIs (though they rarely map to NDC)
+# Extended “structure/group” TTYs for richer CUIs; note many of these will rarely map to NDC,
+# but may be useful in RXCUI searches, particularly where RXCUIs are not cleanly mapped to a
+# very limited set of prescribable products.
 # - Default product TTYs: SCD, SBD, GPCK, BPCK
 # - Components: SCDC, SBDC
 # - Drug forms / groups: SCDF, SBDF, SCDFP, SBDFP, SCDG, SCDGP
@@ -147,7 +147,7 @@ products_for_ingredients <- function(ingredient_rxcui,
     list(cui_ok = unique(c(ing, pins)), name_pat = base_pat)
   }
 
-  # fetchers (each returns tibble: product_rxcui, name, tty)
+  # fetchers that each return a tibble: product_rxcui, name, tty
   fetch_via_rela <- function(ing) {
     rel <- tryCatch(
       rx_get_json(paste0("/rxcui/", ing, "/related"),
@@ -178,7 +178,7 @@ products_for_ingredients <- function(ingredient_rxcui,
     collect_concepts(dg$drugGroup$conceptGroup, tty_vec)
   }
 
-  # verification: ensure product lists the ingredient (IN/PIN) by CUI or name
+  # verify that product lists the ingredient (IN/PIN) by CUI or name
   verify_contains <- function(prod_rxcui, cui_ok, name_pat) {
     rel_ing <- tryCatch(
       rx_get_json(paste0("/rxcui/", prod_rxcui, "/related"),
@@ -213,7 +213,7 @@ products_for_ingredients <- function(ingredient_rxcui,
   }
 
   purrr::map_dfr(ingredient_rxcui, function(ing) {
-    # UNION candidates from all sources
+    # Union candidates from all sources
     cand_rela    <- fetch_via_rela(ing)
     cand_related <- fetch_via_related(ing)
     cand_allrel  <- fetch_via_allrelated(ing)
