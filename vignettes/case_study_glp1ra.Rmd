@@ -1,6 +1,6 @@
 ---
 title: "Case Study: GLP1 receptor agonists"
-author: "rxref authors"
+author: "Steven Smith"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteEncoding{UTF-8}
@@ -42,8 +42,21 @@ RxCUIs and their corresponding NDCs (when available).
 
 First, we need to clarify the set of drugs that are considered part of
 the GLP1-RA class. A quick google search will give us the list of
-GLP1-RA agents currently approved for use: - exenatide - liraglutide -
-lixisenatide - dulaglutide - albiglutide - semaglutide - tirzepatide
+GLP1-RA agents currently approved for use:
+
+-   exenatide
+
+-   liraglutide
+
+-   lixisenatide
+
+-   dulaglutide
+
+-   albiglutide
+
+-   semaglutide
+
+-   tirzepatide
 
 ## Identifying Ingredient RxCUIs
 
@@ -77,7 +90,9 @@ There are two default TTY lists:
 
 -   **.rxref_default_ttys** = "SCD", "SBD", "GPCK", "BPCK"
 
--   **.rxref_extended_ttys** = "SCD", "SBD", "GPCK", "BPCK", "SCDC", "SBDC", "SCDF", "SBDF", "SCDFP", "SBDFP", "SCDG", "SCDGP", "BN", "MIN", "IN"
+-   **.rxref_extended_ttys** = "SCD", "SBD", "GPCK", "BPCK", "SCDC",
+    "SBDC", "SCDF", "SBDF", "SCDFP", "SBDFP", "SCDG", "SCDGP", "BN",
+    "MIN", "IN"
 
 But, you could supply your own set of TTYs to include instead of using
 these two default lists.
