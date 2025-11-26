@@ -11,8 +11,21 @@ RxCUIs and their corresponding NDCs (when available).
 
 First, we need to clarify the set of drugs that are considered part of
 the GLP1-RA class. A quick google search will give us the list of
-GLP1-RA agents currently approved for use: - exenatide - liraglutide -
-lixisenatide - dulaglutide - albiglutide - semaglutide - tirzepatide
+GLP1-RA agents currently approved for use:
+
+- exenatide
+
+- liraglutide
+
+- lixisenatide
+
+- dulaglutide
+
+- albiglutide
+
+- semaglutide
+
+- tirzepatide
 
 ## Identifying Ingredient RxCUIs
 
