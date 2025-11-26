@@ -4,7 +4,7 @@
 \name{rxref-package}
 \alias{rxref}
 \alias{rxref-package}
-\title{rxref: Tidy RxNorm utilities (API-first)}
+\title{rxref: Tidy RxNorm utilities}
 \description{
 Core exported verbs: \code{\link[=resolve]{resolve()}}, \code{\link[=get_properties]{get_properties()}}, \code{\link[=map_to]{map_to()}}.
 Configure behavior with \code{\link[=rxref_conf]{rxref_conf()}} and \code{\link[=set_backend]{set_backend()}}.

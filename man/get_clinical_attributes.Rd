@@ -10,19 +10,43 @@ get_clinical_attributes(rxcui)
 \item{rxcui}{Character vector of RxCUIs}
 }
 \value{
-A tibble with 6 columns: \code{rxcui}, \code{related_rxcui}, \code{name}, \code{tty}, \code{strength}, \code{dose_form}
+A tibble with columns:
+\describe{
+\item{rxcui}{Input RxCUI}
+\item{related_rxcui}{Clinical drug RxCUI (SCD/SBD) used for attributes}
+\item{name}{Clinical drug name}
+\item{tty}{Term type (SCD/SBD, etc.)}
+\item{strength}{Parsed strength string (e.g. "500 MG")}
+\item{dose_form}{Parsed dose form (e.g. "Extended Release Oral Tablet")}
+\item{route}{Route parsed from dose form / DFG (e.g. "ORAL", "INJECTION")}
+\item{dose_form_group}{Dose form group (DFG), if available}
+\item{is_brand}{Logical; TRUE for branded clinical concepts (SBD/BPCK)}
+\item{is_generic}{Logical; TRUE for generic clinical concepts (SCD/GPCK)}
+\item{ingredient_count}{Number of distinct ingredients}
+\item{ingredient_rxcui}{List-column of ingredient RxCUIs}
+\item{ingredient_name}{List-column of ingredient names}
+\item{ingredient_tty}{List-column of ingredient term types (IN/PIN/MIN)}
+\item{is_multi_ingredient}{Logical; TRUE if >1 ingredient}
+\item{suppress}{Raw RxNorm suppress flag from properties}
+\item{status}{Simple status derived from suppress: "ACTIVE" vs "INACTIVE"}
+}
 }
 \description{
-If \code{rxcui} is already a clinical drug (SCD/SBD), parse attributes directly
+If \code{rxcui} is already a clinical drug (TTY = SCD or SBD), parse attributes directly
 from its own name. Otherwise, query \code{/rxcui/{id}/related?tty=SCD,SBD} and parse.
 }
 \details{
-Note: This works, but is still in active development.
+In addition to strength and dose form, this returns route, dose-form group (DFG),
+brand/generic flags, ingredient summaries, and a simple active/inactive status.
+
+Note there is a fair amount of parsing of the RxNorm STR value to try to extract
+relevant information (e.g., strength, dose_form), so check closely before trusting.
+There may be edge cases that are not correctly parsed.
 }
 \examples{
 \donttest{
 get_clinical_attributes(c("861007","860975")) |>
-  dplyr::select(rxcui, related_rxcui, name, strength, dose_form, tty) |>
+  dplyr::select(rxcui, related_rxcui, name, strength, dose_form, route, tty) |>
   head()
 }
 }
