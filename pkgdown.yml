@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   case_study_glp1ra: case_study_glp1ra.html
   rxref_intro: rxref_intro.html
-last_built: 2025-11-26T07:24Z
+last_built: 2025-11-26T07:26Z
 urls:
   reference: http://www.stevenmsmith.org/rxref/reference
   article: http://www.stevenmsmith.org/rxref/articles

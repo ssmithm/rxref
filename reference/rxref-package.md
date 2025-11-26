@@ -1,4 +1,4 @@
-# rxref: Tidy RxNorm utilities (API-first)
+# rxref: Tidy RxNorm utilities
 
 Core exported verbs:
 [`resolve()`](http://www.stevenmsmith.org/rxref/reference/resolve.md),
