@@ -7,15 +7,15 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/ssmithm/rxref/blob/main/DESCRIPTION)
+[`inst/CITATION`](https://github.com/ssmithm/rxref/blob/main/inst/CITATION)
 
-Smith S (2025). *rxref: Tidy Utilities for RxNorm and NDC Resolution*. R
-package version 0.1.0, <https://github.com/ssmithm/rxref>.
+Smith S (2025). *rxref: Tidy RxNorm Utilities*. R package version 0.1.0,
+<https://www.stevenmsmith.org/rxref>.
 
     @Manual{,
-      title = {rxref: Tidy Utilities for RxNorm and NDC Resolution},
+      title = {rxref: Tidy RxNorm Utilities},
       author = {Steven Smith},
       year = {2025},
       note = {R package version 0.1.0},
-      url = {https://github.com/ssmithm/rxref},
+      url = {https://www.stevenmsmith.org/rxref},
     }
