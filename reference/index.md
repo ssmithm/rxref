@@ -17,6 +17,8 @@
 
 - [`find_ingredients()`](http://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
   : Resolve a free-text drug name to ingredient CUIs (IN/PIN)
+- [`ingredients_for_rxcui()`](http://www.stevenmsmith.org/rxref/reference/ingredients_for_rxcui.md)
+  : Get ingredient concepts for RxCUIs
 - [`products_for_ingredients()`](http://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
   : Expand ingredient CUIs to product CUIs that truly contain the
   ingredient

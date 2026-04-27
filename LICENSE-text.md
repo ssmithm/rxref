@@ -1,4 +1,4 @@
 # License
 
-    YEAR: 2025
-    COPYRIGHT HOLDER: Steven Smith
+    YEAR: 2026
+    COPYRIGHT HOLDER: Steven M. Smith
