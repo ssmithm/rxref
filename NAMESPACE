@@ -3,6 +3,7 @@
 export(find_ingredients)
 export(get_clinical_attributes)
 export(get_properties)
+export(ingredients_for_rxcui)
 export(map_ndc_to_rxcui)
 export(map_rxcui_to_ndc)
 export(map_to)

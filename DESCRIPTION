@@ -10,6 +10,7 @@ BugReports: https://github.com/ssmithm/rxref/issues
 Depends:
 	R (>= 4.1)
 Imports:
+	cli, 
 	httr2 (>= 1.0.0),
 	jsonlite,
 	tibble,

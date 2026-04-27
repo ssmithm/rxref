@@ -333,3 +333,63 @@ search_drug <- function(term,
 }
 
 
+#' Get ingredient concepts for RxCUIs
+#'
+#' Maps one or more RxCUIs to related ingredient concepts, returning ingredient
+#' RxCUIs, names, and term types. This is useful when the input is already a
+#' specific RxNorm product concept rather than a free-text drug name.
+#'
+#' @param rxcui Character vector of RxCUIs.
+#' @param include_pin Logical. Include precise ingredient concepts (`PIN`).
+#' @param include_min Logical. Include multiple ingredient concepts (`MIN`).
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'
+#' @return A tibble with columns `rxcui`, `ingredient_rxcui`,
+#'   `ingredient_name`, and `ingredient_tty`.
+#'
+#' @export
+ingredients_for_rxcui <- function(
+    rxcui,
+    include_pin = TRUE,
+    include_min = FALSE,
+    show_progress = interactive()
+) {
+  stopifnot(is.character(rxcui))
+
+  rxcui <- unique(rxcui)
+
+  show_progress <- isTRUE(show_progress) && length(rxcui) >= 5
+
+  progress_id <- NULL
+
+  if (show_progress) {
+    progress_id <- cli::cli_progress_bar(
+      name = "Finding ingredients",
+      total = length(rxcui)
+    )
+  }
+
+  out <- purrr::map(
+    rxcui,
+    function(x) {
+      result <- .rxref_get_ingredients_for_rxcui(
+        x,
+        include_pin = include_pin,
+        include_min = include_min
+      )
+
+      if (show_progress) {
+        cli::cli_progress_update(id = progress_id)
+      }
+
+      result
+    }
+  )
+
+  if (show_progress) {
+    cli::cli_progress_done(id = progress_id)
+  }
+
+  dplyr::bind_rows(out) |>
+    dplyr::rename(rxcui = .data$related_rxcui)
+}
