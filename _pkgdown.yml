@@ -25,6 +25,7 @@ reference:
   - title: "Search & catalog utilities"
     contents:
       - find_ingredients
+      - ingredients_for_rxcui
       - products_for_ingredients
       - search_drug
       - tty_catalogue
