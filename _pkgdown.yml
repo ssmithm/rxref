@@ -22,13 +22,33 @@ reference:
       - map_to
       - ndc_status
 
-  - title: "Search & catalog utilities"
+  - title: "RxNav Search & catalog utilities"
     contents:
       - find_ingredients
       - ingredients_for_rxcui
       - products_for_ingredients
       - search_drug
       - tty_catalogue
+
+  - title: "RxClass Search & catalog utilities"
+    contents:
+      - find_classes
+      - get_atc
+      - get_atcprod
+      - get_chemical_structure
+      - get_class_members
+      - get_classes
+      - get_contraindications
+      - get_drug_classes
+      - get_epc
+      - get_may_treat
+      - get_medrt
+      - get_medrt_moa
+      - get_medrt_pe
+      - get_va
+      - rxclass_rela_sources
+      - rxclass_relas
+      - rxclass_relationships
 
   - title: "Clinical utilities"
     contents:
