@@ -1,6 +1,7 @@
 # rxref: Getting started
 
 ``` r
+
 # install.packages("devtools")
 # devtools::install_github("ssmithm/rxref")
 library(rxref)
@@ -10,12 +11,14 @@ library(dplyr)
 ## Resolve messy inputs to RxCUIs
 
 ``` r
+
 resolve(c("metformin 500 mg tablet", "00093-1048-01", "8610"))
 ```
 
 ## Properties for a set of RxCUIs
 
 ``` r
+
 ids <- c("860975", "860976")
 get_properties(ids)
 ```
@@ -23,6 +26,7 @@ get_properties(ids)
 ## Map in both directions
 
 ``` r
+
 # NDC -> RxCUI(s)
 map_ndc_to_rxcui(c("00093-1048-01", "00093-1048-10"))
 

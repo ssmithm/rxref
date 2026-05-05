@@ -5,13 +5,13 @@
 Suppose we have a need to identify all glucagon-like peptide-1 receptor
 agonist (GLP1-RA) users from either EHR prescribing data, or pharmacy
 claims data (or both). To accomplish this, we need a complete list of
-RxCUIs and their corresponding NDCs (when available).
+RxCUIs and their corresponding NDCs (when available). We’ll go through
+two options to get this list.
 
-## The Set-up
+## Option 1: Starting with a complete list of drugs
 
-First, we need to clarify the set of drugs that are considered part of
-the GLP1-RA class. A quick google search will give us the list of
-GLP1-RA agents currently approved for use:
+A quick google search will give us the list of GLP1-RA agents currently
+approved for use:
 
 - exenatide
 
@@ -27,7 +27,7 @@ GLP1-RA agents currently approved for use:
 
 - tirzepatide
 
-## Identifying Ingredient RxCUIs
+### Identifying Ingredient RxCUIs
 
 Let’s turn this into a character vector and use
 [`find_ingredients()`](http://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
@@ -36,6 +36,7 @@ TTYs and their description from
 [`tty_catalogue()`](http://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)).
 
 ``` r
+
 # remotes::install_github("ssmithm/rxref")
 library(rxref)
 glp1.names <- c("semaglutide", "exenatide", "liraglutide", "lixisenatide", "dulaglutide", "albiglutide", "tirzepatide")
@@ -60,7 +61,7 @@ glp1.ings
 #> 7 tirzepatide  2601723 tirzepatide  IN     12.6
 ```
 
-## Getting Product RxCUIs from Ingredient RxCUIs
+### Getting Product RxCUIs from Ingredient RxCUIs
 
 Now, let’s look for all of the related RxCUIs using
 `product_from_ingredients()`. Here, we’re going to just focus on the
@@ -83,6 +84,7 @@ a GLP1-RA plus one or more other drugs), again using the function’s
 default option of include_combo = TRUE.
 
 ``` r
+
 if (run_live) {
   # run this next line only, if recreating on your own
   glp1.prods <- products_for_ingredients(glp1.ings$rxcui)
@@ -107,13 +109,14 @@ glp1.prods |> head(30)
 #> # ℹ 20 more rows
 ```
 
-## Adding in NDCs from Product RxCUIs
+### Adding in NDCs from Product RxCUIs
 
 Now, let’s identify the related NDCs for each RxCUI. Note that not all
 RxCUIs will link to NDCs, so some NAs will likely show up in the
 resulting file.
 
 ``` r
+
 if (run_live) {
   # run this next line only, if recreating on your own
   glp1.ndc.map <- map_rxcui_to_ndc(unique(glp1.prods$product_rxcui))
@@ -150,10 +153,10 @@ glp1.ndcs |> head(30)
 #> # ℹ 20 more rows
 ```
 
-Voila, we now have a complete list of GLP1-RAs that can be used to query
+Voilà, we now have a complete list of GLP1-RAs that can be used to query
 against the prescribing data or pharmacy claims data.
 
-## An Alternate Approach
+## Option 2: starting with the same list of drugs, using search_drug()
 
 This same goal can be accomplished all in one step, if you prefer, using
 the
@@ -164,6 +167,7 @@ That is, we don’t actually care about the RxCUIs that don’t have a
 corresponding NDC.
 
 ``` r
+
 
 if (run_live) {
   # run this next line only, if recreating on your own
@@ -204,6 +208,7 @@ Compare that against the original table, filtered for non-NA `ndc11`
 values:
 
 ``` r
+
 glp1.ndcs |> filter(!is.na(ndc11))
 #> # A tibble: 150 × 6
 #>    rxcui   ingredient_rxcui ndc11       name                    tty   ingredient

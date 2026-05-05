@@ -27,6 +27,7 @@ You can install the development version of rxref from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("ssmithm/rxref")
 ```
@@ -37,6 +38,7 @@ This is a basic example for querying RxCUIs associated with lisinopril
 (a blood pressure-lowering drug):
 
 ``` r
+
 library(rxref)
 lisinopril.ing <- find_ingredients('lisinopril')
 lisinopril.ing |> knitr::kable()
@@ -48,6 +50,7 @@ lisinopril.ing |> knitr::kable()
 
 ``` r
 
+
 lisinopril.rxcuis <- products_for_ingredients(lisinopril.ing$rxcui, ttys = c("SCD", "SBD"), include_combos = TRUE)
 
 # Resulting table of all related products with TTY in {SCD, SBD}
@@ -56,32 +59,33 @@ lisinopril.rxcuis |>
   knitr::kable()
 ```
 
-| ingredient_rxcui | product_rxcui | name                                                                      | tty | n_ingredients |
-|:-----------------|:--------------|:--------------------------------------------------------------------------|:----|--------------:|
-| 29046            | 104375        | `lisinopril 2.5 MG Oral Tablet [Zestril]`                                 | SBD |             1 |
-| 29046            | 104376        | `lisinopril 5 MG Oral Tablet [Zestril]`                                   | SBD |             1 |
-| 29046            | 104377        | `lisinopril 10 MG Oral Tablet [Zestril]`                                  | SBD |             1 |
-| 29046            | 104378        | `lisinopril 20 MG Oral Tablet [Zestril]`                                  | SBD |             1 |
-| 29046            | 1806890       | `lisinopril 1 MG/ML Oral Solution [Qbrelis]`                              | SBD |             1 |
-| 29046            | 206765        | `lisinopril 10 MG Oral Tablet [Prinivil]`                                 | SBD |             1 |
-| 29046            | 206766        | `lisinopril 20 MG Oral Tablet [Prinivil]`                                 | SBD |             1 |
-| 29046            | 206771        | `lisinopril 40 MG Oral Tablet [Zestril]`                                  | SBD |             1 |
-| 29046            | 213482        | `lisinopril 30 MG Oral Tablet [Zestril]`                                  | SBD |             1 |
-| 29046            | 823971        | `hydrochlorothiazide 25 MG / lisinopril 20 MG Oral Tablet [Zestoretic]`   | SBD |             2 |
-| 29046            | 823982        | `hydrochlorothiazide 12.5 MG / lisinopril 20 MG Oral Tablet [Zestoretic]` | SBD |             2 |
-| 29046            | 823986        | `hydrochlorothiazide 12.5 MG / lisinopril 10 MG Oral Tablet [Zestoretic]` | SBD |             2 |
-| 29046            | 1806884       | `lisinopril 1 MG/ML Oral Solution`                                        | SCD |             1 |
-| 29046            | 197884        | `lisinopril 40 MG Oral Tablet`                                            | SCD |             1 |
-| 29046            | 197885        | `hydrochlorothiazide 12.5 MG / lisinopril 10 MG Oral Tablet`              | SCD |             2 |
-| 29046            | 197886        | `hydrochlorothiazide 12.5 MG / lisinopril 20 MG Oral Tablet`              | SCD |             2 |
-| 29046            | 197887        | `hydrochlorothiazide 25 MG / lisinopril 20 MG Oral Tablet`                | SCD |             2 |
-| 29046            | 205326        | `lisinopril 30 MG Oral Tablet`                                            | SCD |             1 |
-| 29046            | 311353        | `lisinopril 2.5 MG Oral Tablet`                                           | SCD |             1 |
-| 29046            | 311354        | `lisinopril 5 MG Oral Tablet`                                             | SCD |             1 |
-| 29046            | 314076        | `lisinopril 10 MG Oral Tablet`                                            | SCD |             1 |
-| 29046            | 314077        | `lisinopril 20 MG Oral Tablet`                                            | SCD |             1 |
+| ingredient_rxcui | product_rxcui | name | tty | n_ingredients |
+|:---|:---|:---|:---|---:|
+| 29046 | 104375 | `lisinopril 2.5 MG Oral Tablet [Zestril]` | SBD | 1 |
+| 29046 | 104376 | `lisinopril 5 MG Oral Tablet [Zestril]` | SBD | 1 |
+| 29046 | 104377 | `lisinopril 10 MG Oral Tablet [Zestril]` | SBD | 1 |
+| 29046 | 104378 | `lisinopril 20 MG Oral Tablet [Zestril]` | SBD | 1 |
+| 29046 | 1806890 | `lisinopril 1 MG/ML Oral Solution [Qbrelis]` | SBD | 1 |
+| 29046 | 206765 | `lisinopril 10 MG Oral Tablet [Prinivil]` | SBD | 1 |
+| 29046 | 206766 | `lisinopril 20 MG Oral Tablet [Prinivil]` | SBD | 1 |
+| 29046 | 206771 | `lisinopril 40 MG Oral Tablet [Zestril]` | SBD | 1 |
+| 29046 | 213482 | `lisinopril 30 MG Oral Tablet [Zestril]` | SBD | 1 |
+| 29046 | 823971 | `hydrochlorothiazide 25 MG / lisinopril 20 MG Oral Tablet [Zestoretic]` | SBD | 2 |
+| 29046 | 823982 | `hydrochlorothiazide 12.5 MG / lisinopril 20 MG Oral Tablet [Zestoretic]` | SBD | 2 |
+| 29046 | 823986 | `hydrochlorothiazide 12.5 MG / lisinopril 10 MG Oral Tablet [Zestoretic]` | SBD | 2 |
+| 29046 | 1806884 | `lisinopril 1 MG/ML Oral Solution` | SCD | 1 |
+| 29046 | 197884 | `lisinopril 40 MG Oral Tablet` | SCD | 1 |
+| 29046 | 197885 | `hydrochlorothiazide 12.5 MG / lisinopril 10 MG Oral Tablet` | SCD | 2 |
+| 29046 | 197886 | `hydrochlorothiazide 12.5 MG / lisinopril 20 MG Oral Tablet` | SCD | 2 |
+| 29046 | 197887 | `hydrochlorothiazide 25 MG / lisinopril 20 MG Oral Tablet` | SCD | 2 |
+| 29046 | 205326 | `lisinopril 30 MG Oral Tablet` | SCD | 1 |
+| 29046 | 311353 | `lisinopril 2.5 MG Oral Tablet` | SCD | 1 |
+| 29046 | 311354 | `lisinopril 5 MG Oral Tablet` | SCD | 1 |
+| 29046 | 314076 | `lisinopril 10 MG Oral Tablet` | SCD | 1 |
+| 29046 | 314077 | `lisinopril 20 MG Oral Tablet` | SCD | 1 |
 
 ``` r
+
 
 # Count of TTYs in resulting table
 aggregate(

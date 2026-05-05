@@ -13,7 +13,7 @@
 - [`ndc_status()`](http://www.stevenmsmith.org/rxref/reference/ndc_status.md)
   : Get RxNav status for NDCs
 
-## Search & catalog utilities
+## RxNav Search & catalog utilities
 
 - [`find_ingredients()`](http://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
   : Resolve a free-text drug name to ingredient CUIs (IN/PIN)
@@ -26,6 +26,44 @@
   : Search free-text drug name and return product CUIs and/or NDCs
 - [`tty_catalogue()`](http://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)
   : Catalogue of RxNorm TTY (Term Types)
+
+## RxClass Search & catalog utilities
+
+- [`find_classes()`](http://www.stevenmsmith.org/rxref/reference/find_classes.md)
+  : Find RxClass drug classes by class name
+- [`get_atc()`](http://www.stevenmsmith.org/rxref/reference/get_atc.md)
+  : Get ATC classes for RxNorm drugs
+- [`get_atcprod()`](http://www.stevenmsmith.org/rxref/reference/get_atcprod.md)
+  : Get ATC product-level classes for RxNorm drugs
+- [`get_chemical_structure()`](http://www.stevenmsmith.org/rxref/reference/get_chemical_structure.md)
+  : Get chemical-structure assertions
+- [`get_class_members()`](http://www.stevenmsmith.org/rxref/reference/get_class_members.md)
+  : Get RxNorm members of an RxClass class
+- [`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md)
+  **\[experimental\]** : Get RxClass assertions for RxNorm drugs
+- [`get_contraindications()`](http://www.stevenmsmith.org/rxref/reference/get_contraindications.md)
+  : Get contraindication assertions from MED-RT
+- [`get_drug_classes()`](http://www.stevenmsmith.org/rxref/reference/get_drug_classes.md)
+  **\[experimental\]** : Get class-like RxClass assertions for RxNorm
+  drugs
+- [`get_epc()`](http://www.stevenmsmith.org/rxref/reference/get_epc.md)
+  : Get FDA/SPL established pharmacologic classes
+- [`get_may_treat()`](http://www.stevenmsmith.org/rxref/reference/get_may_treat.md)
+  : Get indication/treatment assertions from MED-RT
+- [`get_medrt()`](http://www.stevenmsmith.org/rxref/reference/get_medrt.md)
+  : Get MED-RT assertions for RxNorm drugs
+- [`get_medrt_moa()`](http://www.stevenmsmith.org/rxref/reference/get_medrt_moa.md)
+  : Get MED-RT mechanism-of-action assertions
+- [`get_medrt_pe()`](http://www.stevenmsmith.org/rxref/reference/get_medrt_pe.md)
+  : Get MED-RT physiologic-effect assertions
+- [`get_va()`](http://www.stevenmsmith.org/rxref/reference/get_va.md) :
+  Get VA drug classes for RxNorm drugs
+- [`rxclass_rela_sources()`](http://www.stevenmsmith.org/rxref/reference/rxclass_rela_sources.md)
+  : Get RxClass relationship sources
+- [`rxclass_relas()`](http://www.stevenmsmith.org/rxref/reference/rxclass_relas.md)
+  : Get RxClass relationship types
+- [`rxclass_relationships()`](http://www.stevenmsmith.org/rxref/reference/rxclass_relationships.md)
+  : Summarize RxClass relationship types for drugs
 
 ## Clinical utilities
 

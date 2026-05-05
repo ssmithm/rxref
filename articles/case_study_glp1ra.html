@@ -77,14 +77,14 @@ Smith</h4>
 <p>Suppose we have a need to identify all glucagon-like peptide-1
 receptor agonist (GLP1-RA) users from either EHR prescribing data, or
 pharmacy claims data (or both). To accomplish this, we need a complete
-list of RxCUIs and their corresponding NDCs (when available).</p>
+list of RxCUIs and their corresponding NDCs (when available). We’ll go
+through two options to get this list.</p>
 </div>
 <div class="section level2">
-<h2 id="the-set-up">The Set-up<a class="anchor" aria-label="anchor" href="#the-set-up"></a>
+<h2 id="option-1-starting-with-a-complete-list-of-drugs">Option 1: Starting with a complete list of drugs<a class="anchor" aria-label="anchor" href="#option-1-starting-with-a-complete-list-of-drugs"></a>
 </h2>
-<p>First, we need to clarify the set of drugs that are considered part
-of the GLP1-RA class. A quick google search will give us the list of
-GLP1-RA agents currently approved for use:</p>
+<p>A quick google search will give us the list of GLP1-RA agents
+currently approved for use:</p>
 <ul>
 <li><p>exenatide</p></li>
 <li><p>liraglutide</p></li>
@@ -94,10 +94,9 @@ GLP1-RA agents currently approved for use:</p>
 <li><p>semaglutide</p></li>
 <li><p>tirzepatide</p></li>
 </ul>
-</div>
-<div class="section level2">
-<h2 id="identifying-ingredient-rxcuis">Identifying Ingredient RxCUIs<a class="anchor" aria-label="anchor" href="#identifying-ingredient-rxcuis"></a>
-</h2>
+<div class="section level3">
+<h3 id="identifying-ingredient-rxcuis">Identifying Ingredient RxCUIs<a class="anchor" aria-label="anchor" href="#identifying-ingredient-rxcuis"></a>
+</h3>
 <p>Let’s turn this into a character vector and use
 <code><a href="../reference/find_ingredients.html">find_ingredients()</a></code> to gather RxCUIs for TTY = ‘IN’ (note:
 you can get a complete list of TTYs and their description from
@@ -126,9 +125,9 @@ you can get a complete list of TTYs and their description from
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> albiglutide  1534763 albiglutide  IN     14.0</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> tirzepatide  2601723 tirzepatide  IN     12.6</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="getting-product-rxcuis-from-ingredient-rxcuis">Getting Product RxCUIs from Ingredient RxCUIs<a class="anchor" aria-label="anchor" href="#getting-product-rxcuis-from-ingredient-rxcuis"></a>
-</h2>
+<div class="section level3">
+<h3 id="getting-product-rxcuis-from-ingredient-rxcuis">Getting Product RxCUIs from Ingredient RxCUIs<a class="anchor" aria-label="anchor" href="#getting-product-rxcuis-from-ingredient-rxcuis"></a>
+</h3>
 <p>Now, let’s look for all of the related RxCUIs using
 <code>product_from_ingredients()</code>. Here, we’re going to just focus
 on the TTYs that are likely to have NDCs (SCD, SBD, GPCK, BPCK) by using
@@ -170,9 +169,9 @@ default option of include_combo = TRUE.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1991302          2553903       0.75 ML semaglutide 2.27 … SBD               1</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more rows</span></span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="adding-in-ndcs-from-product-rxcuis">Adding in NDCs from Product RxCUIs<a class="anchor" aria-label="anchor" href="#adding-in-ndcs-from-product-rxcuis"></a>
-</h2>
+<div class="section level3">
+<h3 id="adding-in-ndcs-from-product-rxcuis">Adding in NDCs from Product RxCUIs<a class="anchor" aria-label="anchor" href="#adding-in-ndcs-from-product-rxcuis"></a>
+</h3>
 <p>Now, let’s identify the related NDCs for each RxCUI. Note that not
 all RxCUIs will link to NDCs, so some NAs will likely show up in the
 resulting file.</p>
@@ -211,11 +210,13 @@ resulting file.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1859000 1440051          00024576102 3 ML insulin glargine … SBD   lixisenat…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1859000 1440051          00024576105 3 ML insulin glargine … SBD   lixisenat…</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more rows</span></span></span></code></pre></div>
-<p>Voila, we now have a complete list of GLP1-RAs that can be used to
+<p>Voilà, we now have a complete list of GLP1-RAs that can be used to
 query against the prescribing data or pharmacy claims data.</p>
 </div>
+</div>
 <div class="section level2">
-<h2 id="an-alternate-approach">An Alternate Approach<a class="anchor" aria-label="anchor" href="#an-alternate-approach"></a>
+<h2 id="option-2-starting-with-the-same-list-of-drugs-using-search_drug">Option 2: starting with the same list of drugs, using
+search_drug()<a class="anchor" aria-label="anchor" href="#option-2-starting-with-the-same-list-of-drugs-using-search_drug"></a>
 </h2>
 <p>This same goal can be accomplished all in one step, if you prefer,
 using the <code><a href="../reference/search_drug.html">search_drug()</a></code> function. Suppose we want to just
