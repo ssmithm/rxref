@@ -1,3 +1,6 @@
+#' @importFrom digest digest
+NULL
+
 #' @keywords internal
 #' @noRd
 rx_http_client <- function() {
@@ -17,9 +20,11 @@ rx_sleep <- function() {
 #' @keywords internal
 #' @noRd
 rx_get_json <- (function(){
+
   get_cache <- function() {
     opt <- getOption("rxref.cache")
     if (inherits(opt, "memoise_cache")) return(opt)
+    digest("rxref")
     memoise::cache_filesystem(path = tools::R_user_dir("rxref", which = "cache"))
   }
   mem_fun <- memoise::memoise(
@@ -38,6 +43,63 @@ rx_get_json <- (function(){
   )
   mem_fun
 })()
+
+#' @keywords internal
+#' @noRd
+rxclass_http_client <- function() {
+  httr2::request(
+    getOption(
+      "rxref.rxclass_base_url",
+      "https://rxnav.nlm.nih.gov/REST/rxclass"
+    )
+  ) |>
+    httr2::req_user_agent(getOption("rxref.user_agent"))
+}
+
+#' @keywords internal
+#' @noRd
+.rxclass_collapse_query <- function(x) {
+  if (is.null(x)) return(NULL)
+  if (length(x) == 0) return(NULL)
+
+  paste(x, collapse = " ")
+}
+
+#' @keywords internal
+#' @noRd
+rxclass_get_json <- (function() {
+  get_cache <- function() {
+    opt <- getOption("rxref.cache")
+    if (inherits(opt, "memoise_cache")) return(opt)
+    digest("rxref")
+    memoise::cache_filesystem(
+      path = tools::R_user_dir("rxref", which = "cache")
+    )
+  }
+  mem_fun <- memoise::memoise(
+    function(path, query = list()) {
+      rx_sleep()
+      path_json <- if (grepl("\\.json$", path)) path else paste0(path, ".json")
+      req <- rxclass_http_client() |>
+        httr2::req_url_path_append(path_json) |>
+        httr2::req_url_query(!!!query, .multi = "explode")
+      resp <- httr2::req_perform(req)
+      httr2::resp_check_status(resp)
+      txt <- httr2::resp_body_string(resp)
+      jsonlite::fromJSON(txt, simplifyVector = FALSE)
+    },
+    cache = get_cache()
+  )
+
+  mem_fun
+})()
+
+#' @keywords internal
+#' @noRd
+null2chr <- function(x) {
+  if (is.null(x) || length(x) == 0) return(NA_character_)
+  as.character(x[[1]])
+}
 
 
 # tidy helpers --------------------------------------------------------------

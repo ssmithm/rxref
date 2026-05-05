@@ -36,13 +36,13 @@ library(dplyr)
 Suppose we have a need to identify all glucagon-like peptide-1 receptor
 agonist (GLP1-RA) users from either EHR prescribing data, or pharmacy
 claims data (or both). To accomplish this, we need a complete list of
-RxCUIs and their corresponding NDCs (when available).
+RxCUIs and their corresponding NDCs (when available). We'll go through two 
+options to get this list. 
 
-## The Set-up
+## Option 1: Starting with a complete list of drugs
 
-First, we need to clarify the set of drugs that are considered part of
-the GLP1-RA class. A quick google search will give us the list of
-GLP1-RA agents currently approved for use:
+A quick google search will give us the list of GLP1-RA agents currently 
+approved for use:
 
 -   exenatide
 
@@ -58,7 +58,8 @@ GLP1-RA agents currently approved for use:
 
 -   tirzepatide
 
-## Identifying Ingredient RxCUIs
+
+### Identifying Ingredient RxCUIs
 
 Let's turn this into a character vector and use `find_ingredients()` to
 gather RxCUIs for TTY = 'IN' (note: you can get a complete list of TTYs
@@ -79,7 +80,7 @@ if (run_live) {
 glp1.ings
 ```
 
-## Getting Product RxCUIs from Ingredient RxCUIs
+### Getting Product RxCUIs from Ingredient RxCUIs
 
 Now, let's look for all of the related RxCUIs using
 `product_from_ingredients()`. Here, we're going to just focus on the
@@ -112,7 +113,7 @@ if (run_live) {
 glp1.prods |> head(30)
 ```
 
-## Adding in NDCs from Product RxCUIs
+### Adding in NDCs from Product RxCUIs
 
 Now, let's identify the related NDCs for each RxCUI. Note that not all
 RxCUIs will link to NDCs, so some NAs will likely show up in the
@@ -141,10 +142,10 @@ glp1.ndcs <- dplyr::left_join(
 glp1.ndcs |> head(30)
 ```
 
-Voila, we now have a complete list of GLP1-RAs that can be used to query
+Voilà, we now have a complete list of GLP1-RAs that can be used to query
 against the prescribing data or pharmacy claims data.
 
-## An Alternate Approach
+## Option 2: starting with the same list of drugs, using search_drug()
 
 This same goal can be accomplished all in one step, if you prefer, using
 the `search_drug()` function. Suppose we want to just get NDCs, and we

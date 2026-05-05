@@ -11,21 +11,23 @@ Depends:
 	R (>= 4.1)
 Imports:
 	cli, 
+	digest,
+	dplyr,
 	httr2 (>= 1.0.0),
 	jsonlite,
-	tibble,
-	dplyr,
-	tidyr,
+	lifecycle,
+	memoise,
 	purrr,
 	rlang,
 	stringr,
-	vctrs,
-	memoise
+	tibble,
+	tidyr,
+	vctrs
 Suggests:
+	curl,
 	knitr,
 	rmarkdown,
-	testthat (>= 3.1.0),
-	curl
+	testthat (>= 3.1.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Encoding: UTF-8
