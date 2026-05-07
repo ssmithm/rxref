@@ -17,9 +17,11 @@ map_rxcui_to_ndc(x, status = NULL, show_progress = interactive())
 
 \item{to}{One of c("rxcui","ndc") indicating desired output id.}
 
-\item{status}{For \code{to = "ndc"}, filter by NDC status (e.g., "ACTIVE"). Use NULL for all.}
+\item{status}{For \code{to = "ndc"}, filter by NDC status, e.g., "ACTIVE".
+Use NULL for all.}
 
-\item{show_progress}{Logical. Show a progress bar in interactive sessions.}
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 tibble with columns depending on direction.

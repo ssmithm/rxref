@@ -4,10 +4,13 @@
 \alias{ndc_status}
 \title{Get RxNav status for NDCs}
 \usage{
-ndc_status(ndc)
+ndc_status(ndc, show_progress = interactive())
 }
 \arguments{
 \item{ndc}{character vector; hyphenated or digits}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble with three columns: ndc_input, ndc11, ndc_hyph, status

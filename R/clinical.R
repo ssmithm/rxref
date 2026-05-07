@@ -11,6 +11,9 @@
 #' There may be edge cases that are not correctly parsed.
 #'
 #' @param rxcui Character vector of RxCUIs
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
+#'
 #' @return A tibble with columns:
 #'   \describe{
 #'     \item{rxcui}{Input RxCUI}
@@ -38,7 +41,7 @@
 #'   head()
 #' }
 #' @export
-get_clinical_attributes <- function(rxcui) {
+get_clinical_attributes <- function(rxcui, show_progress = interactive()) {
   stopifnot(is.character(rxcui))
 
   # parser helper: pull "500 MG", "10 MG/ML", "0.1 %", "5,000 UNITS" etc.
@@ -108,80 +111,89 @@ get_clinical_attributes <- function(rxcui) {
   }
 
   # 1. Core clinical mapping
-  core <- purrr::map_dfr(rxcui, function(id) {
-    # 1) Pull properties to know TTY and get name
-    props <- tryCatch(
-      rx_get_json(paste0("/rxcui/", id, "/properties")),
-      error = function(e) NULL
-    )
-    p <- props$properties
-    tty_self  <- null2na(p$tty)
-    name_self <- null2na(p$name)
-
-    # If the concept is already SCD/SBD, parse it
-    if (!is.na(tty_self) && tty_self %in% c("SCD","SBD")) {
-      pr <- parse_strength_dose(name_self)
-      return(tibble::tibble(
-        rxcui        = id,
-        related_rxcui = id,
-        name         = name_self,
-        tty          = tty_self,
-        strength     = pr$strength,
-        dose_form    = pr$dose_form
-      ))
-    }
-
-    # Otherwise, fetch related SCD/SBD
-    rel <- tryCatch(
-      rx_get_json(
-        paste0("/rxcui/", id, "/related"),
-        query = list(tty = "SCD SBD")
-      ),
-      error = function(e) NULL
-    )
-    groups <- rel$relatedGroup$conceptGroup
-    if (is.null(groups)) {
-      # no related clinical concepts found
-      return(tibble::tibble(
-        rxcui        = id,
-        related_rxcui = NA_character_,
-        name         = NA_character_,
-        tty          = NA_character_,
-        strength     = NA_character_,
-        dose_form    = NA_character_
-      ))
-    }
-
-    # Flatten conceptProperties across groups robustly
-    concepts <- purrr::map(groups, "conceptProperties") |>
-      purrr::compact() |>
-      unlist(recursive = FALSE)
-
-    if (!length(concepts)) {
-      return(tibble::tibble(
-        rxcui        = id,
-        related_rxcui = NA_character_,
-        name         = NA_character_,
-        tty          = NA_character_,
-        strength     = NA_character_,
-        dose_form    = NA_character_
-      ))
-    }
-
-    purrr::map_dfr(concepts, function(cp) {
-      nm  <- null2na(cp$name)
-      tty <- null2na(cp$tty)
-      pr  <- parse_strength_dose(nm)
-      tibble::tibble(
-        rxcui        = id,
-        related_rxcui = null2na(cp$rxcui),
-        name         = nm,
-        tty          = tty,
-        strength     = pr$strength,
-        dose_form    = pr$dose_form
+  core <- .rxref_progress_map_dfr(
+    rxcui,
+    function(id) {
+      # 1) Pull properties to know TTY and get name
+      props <- tryCatch(
+        rx_get_json(paste0("/rxcui/", id, "/properties")),
+        error = function(e) NULL
       )
-    })
-  })
+
+      p <- props$properties
+      tty_self  <- null2na(p$tty)
+      name_self <- null2na(p$name)
+
+      # If the concept is already SCD/SBD, parse it
+      if (!is.na(tty_self) && tty_self %in% c("SCD", "SBD")) {
+        pr <- parse_strength_dose(name_self)
+
+        return(tibble::tibble(
+          rxcui         = id,
+          related_rxcui = id,
+          name          = name_self,
+          tty           = tty_self,
+          strength      = pr$strength,
+          dose_form     = pr$dose_form
+        ))
+      }
+
+      # Otherwise, fetch related SCD/SBD
+      rel <- tryCatch(
+        rx_get_json(
+          paste0("/rxcui/", id, "/related"),
+          query = list(tty = "SCD SBD")
+        ),
+        error = function(e) NULL
+      )
+
+      groups <- rel$relatedGroup$conceptGroup
+
+      if (is.null(groups)) {
+        return(tibble::tibble(
+          rxcui         = id,
+          related_rxcui = NA_character_,
+          name          = NA_character_,
+          tty           = NA_character_,
+          strength      = NA_character_,
+          dose_form     = NA_character_
+        ))
+      }
+
+      # Flatten conceptProperties across groups robustly
+      concepts <- purrr::map(groups, "conceptProperties") |>
+        purrr::compact() |>
+        unlist(recursive = FALSE)
+
+      if (!length(concepts)) {
+        return(tibble::tibble(
+          rxcui         = id,
+          related_rxcui = NA_character_,
+          name          = NA_character_,
+          tty           = NA_character_,
+          strength      = NA_character_,
+          dose_form     = NA_character_
+        ))
+      }
+
+      purrr::map_dfr(concepts, function(cp) {
+        nm  <- null2na(cp$name)
+        tty <- null2na(cp$tty)
+        pr  <- parse_strength_dose(nm)
+
+        tibble::tibble(
+          rxcui         = id,
+          related_rxcui = null2na(cp$rxcui),
+          name          = nm,
+          tty           = tty,
+          strength      = pr$strength,
+          dose_form     = pr$dose_form
+        )
+      })
+    },
+    name = "Getting clinical attributes",
+    show_progress = show_progress
+  )
 
   # nothing else to do if everything failed
   if (!nrow(core)) return(core)
@@ -297,7 +309,7 @@ get_clinical_attributes <- function(rxcui) {
 
   # 5. Status from suppress (via get_properties)
   props_clin <- tryCatch(
-    get_properties(clinical_ids),
+    get_properties(clinical_ids, show_progress = FALSE),
     error = function(e) tibble::tibble(rxcui = clinical_ids, suppress = NA_character_)
   )
 

@@ -43,7 +43,7 @@ test_that("search_drug can filter products by route", {
 })
 
 test_that("filter_products_by_route filters using mocked clinical route attributes", {
-  fake_get_clinical_attributes <- function(rxcui) {
+  fake_get_clinical_attributes <- function(rxcui, ...) {
     expect_equal(sort(rxcui), c("10", "11", "12"))
 
     tibble::tibble(
@@ -93,7 +93,7 @@ test_that("filter_products_by_route filters using mocked clinical route attribut
 })
 
 test_that("filter_products_by_route can drop appended route columns", {
-  fake_get_clinical_attributes <- function(rxcui) {
+  fake_get_clinical_attributes <- function(rxcui, ...) {
     tibble::tibble(
       rxcui = c("10", "11"),
       dose_form = c("Oral Tablet", "Ophthalmic Solution"),

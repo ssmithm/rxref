@@ -4,7 +4,12 @@
 \alias{find_ingredients}
 \title{Resolve a free-text drug name to ingredient CUIs (IN/PIN)}
 \usage{
-find_ingredients(term, max_entries = 10, include_pin = TRUE)
+find_ingredients(
+  term,
+  max_entries = 10,
+  include_pin = TRUE,
+  show_progress = interactive()
+)
 }
 \arguments{
 \item{term}{Character vector (free text).}
@@ -12,6 +17,9 @@ find_ingredients(term, max_entries = 10, include_pin = TRUE)
 \item{max_entries}{Integer. Max approximate-term candidates per input (default 10).}
 
 \item{include_pin}{Logical. Include precise-ingredient (\code{PIN}) CUIs (default TRUE).}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble with columns: \code{input}, \code{rxcui}, \code{name}, \code{tty}, \code{score}.

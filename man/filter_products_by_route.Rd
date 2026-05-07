@@ -4,7 +4,12 @@
 \alias{filter_products_by_route}
 \title{Filter RxNorm product concepts by route of administration.}
 \usage{
-filter_products_by_route(products, route = "ORAL", keep_route_info = TRUE)
+filter_products_by_route(
+  products,
+  route = "ORAL",
+  keep_route_info = TRUE,
+  show_progress = interactive()
+)
 }
 \arguments{
 \item{products}{A tibble containing a \code{product_rxcui} column, such as the
@@ -16,6 +21,9 @@ output of \code{\link[=products_for_ingredients]{products_for_ingredients()}}.}
 
 \item{keep_route_info}{Logical. If \code{TRUE} (default), append route, dose form, and
 dose-form group summaries to the returned table.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble containing only rows whose \code{product_rxcui} has at least one

@@ -4,7 +4,12 @@
 \alias{get_atcprod}
 \title{Get ATC product-level classes for RxNorm drugs}
 \usage{
-get_atcprod(x, by = c("rxcui", "name"), keep_input = TRUE)
+get_atcprod(
+  x,
+  by = c("rxcui", "name"),
+  keep_input = TRUE,
+  show_progress = interactive()
+)
 }
 \arguments{
 \item{x}{Character vector of RxCUIs or drug names.}
@@ -12,6 +17,9 @@ get_atcprod(x, by = c("rxcui", "name"), keep_input = TRUE)
 \item{by}{One of \code{"rxcui"} or \code{"name"}.}
 
 \item{keep_input}{Logical; if \code{TRUE}, includes the original input value.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble of ATCPROD class assertions.

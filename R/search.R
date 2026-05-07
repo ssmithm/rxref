@@ -20,6 +20,8 @@
 #' @param term Character vector (free text).
 #' @param max_entries Integer. Max approximate-term candidates per input (default 10).
 #' @param include_pin Logical. Include precise-ingredient (`PIN`) CUIs (default TRUE).
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble with columns: `input`, `rxcui`, `name`, `tty`, `score`.
 #'
@@ -28,33 +30,61 @@
 #'   find_ingredients("metformin")
 #' }
 #' @export
-find_ingredients <- function(term, max_entries = 10, include_pin = TRUE) {
+find_ingredients <- function(
+    term,
+    max_entries = 10,
+    include_pin = TRUE,
+    show_progress = interactive()
+) {
   stopifnot(is.character(term))
-  purrr::map_dfr(term, function(t) {
-    approx <- rx_get_json("/approximateTerm", query = list(term = t, maxEntries = max_entries))
-    cand <- approx$approximateGroup$candidate
-    if (is.null(cand) || !length(cand)) {
-      return(tibble::tibble(
-        input = t, rxcui = NA_character_, name = NA_character_,
-        tty = NA_character_, score = NA_real_
-      ))
-    }
-    rows <- purrr::map_dfr(cand, function(c) {
-      id <- null2na(c$rxcui)
-      pr <- if (!is.na(id)) rx_get_json(paste0("/rxcui/", id, "/properties")) else NULL
-      tibble::tibble(
-        input = t,
-        rxcui = id,
-        name  = null2na(pr$properties$name),
-        tty   = null2na(pr$properties$tty),
-        score = suppressWarnings(as.numeric(null2na(c$score)))
+
+  .rxref_progress_map_dfr(
+    term,
+    function(t) {
+      approx <- rx_get_json(
+        "/approximateTerm",
+        query = list(term = t, maxEntries = max_entries)
       )
-    })
-    keep_ttys <- if (include_pin) c("IN","PIN") else "IN"
-    rows |>
-      dplyr::filter(.data$tty %in% keep_ttys) |>
-      dplyr::arrange(dplyr::desc(.data$score))
-  }) |>
+
+      cand <- approx$approximateGroup$candidate
+
+      if (is.null(cand) || !length(cand)) {
+        return(tibble::tibble(
+          input = t,
+          rxcui = NA_character_,
+          name = NA_character_,
+          tty = NA_character_,
+          score = NA_real_
+        ))
+      }
+
+      rows <- purrr::map_dfr(cand, function(c) {
+        id <- null2na(c$rxcui)
+
+        pr <- if (!is.na(id)) {
+          rx_get_json(paste0("/rxcui/", id, "/properties"))
+        } else {
+          NULL
+        }
+
+        tibble::tibble(
+          input = t,
+          rxcui = id,
+          name = null2na(pr$properties$name),
+          tty = null2na(pr$properties$tty),
+          score = suppressWarnings(as.numeric(null2na(c$score)))
+        )
+      })
+
+      keep_ttys <- if (include_pin) c("IN", "PIN") else "IN"
+
+      rows |>
+        dplyr::filter(.data$tty %in% keep_ttys) |>
+        dplyr::arrange(dplyr::desc(.data$score))
+    },
+    name = "Finding ingredients",
+    show_progress = show_progress
+  ) |>
     dplyr::distinct()
 }
 
@@ -75,12 +105,16 @@ find_ingredients <- function(term, max_entries = 10, include_pin = TRUE) {
 #'   and may not filter well on other TTYs such as those in `.rxref_extended_ttys`.
 #' @param include_combos Logical; if `FALSE`, keep only single-ingredient
 #'   products (counting distinct `IN`; if none present, falls back to distinct `PIN`).
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'
 #' @return Tibble with columns: `ingredient_rxcui`, `product_rxcui`, `name`, `tty`, `n_ingredients`.
+#'
 #' @export
 products_for_ingredients <- function(ingredient_rxcui,
                                      ttys = .rxref_default_ttys,
                                      route = NULL,
-                                     include_combos = TRUE) {
+                                     include_combos = TRUE,
+                                     show_progress = interactive()) {
   stopifnot(is.character(ingredient_rxcui), is.character(ttys), length(ttys) >= 1)
   tty_vec <- unique(ttys)
 
@@ -217,49 +251,70 @@ products_for_ingredients <- function(ingredient_rxcui,
     tibble::tibble(product_rxcui = prod_rxcui, n_ingredients = as.integer(n_total), contains = contains)
   }
 
-  out <- purrr::map_dfr(ingredient_rxcui, function(ing) {
-    # Union candidates from all sources
-    cand_rela    <- fetch_via_rela(ing)
-    cand_related <- fetch_via_related(ing)
-    cand_allrel  <- fetch_via_allrelated(ing)
-    cand_drugs   <- fetch_via_drugs_name(ing)
+  out <- .rxref_progress_map_dfr(
+    ingredient_rxcui,
+    function(ing) {
+      cand_rela <- fetch_via_rela(ing)
+      cand_related <- fetch_via_related(ing)
+      cand_allrel <- fetch_via_allrelated(ing)
+      cand_drugs <- fetch_via_drugs_name(ing)
 
-    prods <- dplyr::bind_rows(cand_rela, cand_related, cand_allrel, cand_drugs) |>
-      dplyr::distinct()
+      prods <- dplyr::bind_rows(
+        cand_rela,
+        cand_related,
+        cand_allrel,
+        cand_drugs
+      ) |>
+        dplyr::distinct()
 
-    if (!nrow(prods)) {
-      return(tibble::tibble(
-        ingredient_rxcui = character(),
-        product_rxcui    = character(),
-        name             = character(),
-        tty              = character(),
-        n_ingredients    = integer()
-      ))
-    }
+      if (!nrow(prods)) {
+        return(tibble::tibble(
+          ingredient_rxcui = character(),
+          product_rxcui = character(),
+          name = character(),
+          tty = character(),
+          n_ingredients = integer()
+        ))
+      }
 
-    acc <- acceptance_for_ing(ing)
-    chk <- purrr::map_dfr(
-      prods$product_rxcui,
-      verify_contains,
-      cui_ok = acc$cui_ok,
-      name_pat = acc$name_pat
-    )
+      acc <- acceptance_for_ing(ing)
 
-    out_ <- prods |>
-      dplyr::left_join(chk, by = "product_rxcui") |>
-      dplyr::filter(.data$contains %in% TRUE) |>
-      dplyr::mutate(ingredient_rxcui = ing) |>
-      dplyr::select("ingredient_rxcui", "product_rxcui", "name", "tty", "n_ingredients")
+      chk <- purrr::map_dfr(
+        prods$product_rxcui,
+        verify_contains,
+        cui_ok = acc$cui_ok,
+        name_pat = acc$name_pat
+      )
 
-    if (!isTRUE(include_combos)) {
-      out_ <- dplyr::filter(out_, .data$n_ingredients <= 1L)
-    }
-    out_
-  }) |>
+      out_ <- prods |>
+        dplyr::left_join(chk, by = "product_rxcui") |>
+        dplyr::filter(.data$contains %in% TRUE) |>
+        dplyr::mutate(ingredient_rxcui = ing) |>
+        dplyr::select(
+          .data$ingredient_rxcui,
+          .data$product_rxcui,
+          .data$name,
+          .data$tty,
+          .data$n_ingredients
+        )
+
+      if (!isTRUE(include_combos)) {
+        out_ <- dplyr::filter(out_, .data$n_ingredients <= 1L)
+      }
+
+      out_
+    },
+    name = "Finding products",
+    show_progress = show_progress
+  ) |>
     dplyr::distinct()
 
   if (!is.null(route)) {
-    out <- filter_products_by_route(out, route = route)
+    out <- filter_products_by_route(
+      out,
+      route = route,
+      show_progress = show_progress
+    )
   }
 
   out
@@ -283,6 +338,8 @@ products_for_ingredients <- function(ingredient_rxcui,
 #'   products or mapping to NDCs. If `NULL`, no route filtering is performed.
 #'   Common values include `"ORAL"`, `"INJECTION"`, `"OPHTHALMIC"`,
 #'   `"INHALATION"`, and `"TOPICAL"`.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #' @param ... Passed to `products_for_ingredients()` (e.g., include_combos = FALSE)
 #' @return If `return="rxcui"`: tibble of products.
 #'   If `"ndc"`: tibble of NDCs with `ingredient_rxcui`, `product_rxcui`, `ndc11`, `ndc_status`.
@@ -293,10 +350,14 @@ search_drug <- function(term,
                         ndc_status = NULL,
                         ttys = .rxref_default_ttys,
                         route = NULL,
+                        show_progress = interactive(),
                         ...) {
   return <- match.arg(return)
 
-  ings <- find_ingredients(term)
+  ings <- find_ingredients(
+    term,
+    show_progress = show_progress
+  )
   ing_ids <- unique(stats::na.omit(ings$rxcui))
 
   empty_products <- tibble::tibble(
@@ -319,7 +380,11 @@ search_drug <- function(term,
     return(list(products = empty_products, ndcs = empty_ndc))
   }
 
-  prods <- products_for_ingredients(ing_ids, ttys = ttys, ...)
+  prods <- products_for_ingredients(
+    ing_ids,
+    ttys = ttys,
+    show_progress = show_progress,
+    ...)
   if (!is.null(route)) {
     prods <- filter_products_by_route(prods, route = route)
   }
@@ -336,9 +401,11 @@ search_drug <- function(term,
   }
 
   # Map each product rxcui to NDCs; rename rxcui -> product_rxcui for join
-  ndcs <- purrr::map_dfr(prod_ids, function(p) {
-    map_rxcui_to_ndc(p, status = ndc_status)
-  }) |>
+  ndcs <- map_rxcui_to_ndc(
+    prod_ids,
+    status = ndc_status,
+    show_progress = show_progress
+  ) |>
     dplyr::mutate(product_rxcui = .data$rxcui) |>
     dplyr::select(.data$product_rxcui, .data$ndc11, dplyr::any_of("ndc_status")) |>
     dplyr::left_join(
@@ -376,40 +443,17 @@ ingredients_for_rxcui <- function(
 ) {
   stopifnot(is.character(rxcui))
 
-  rxcui <- unique(rxcui)
-
-  show_progress <- isTRUE(show_progress) && length(rxcui) >= 5
-
-  progress_id <- NULL
-
-  if (show_progress) {
-    progress_id <- cli::cli_progress_bar(
-      name = "Finding ingredients",
-      total = length(rxcui)
-    )
-  }
-
-  out <- purrr::map(
+  .rxref_progress_map_dfr(
     rxcui,
     function(x) {
-      result <- .rxref_get_ingredients_for_rxcui(
+      .rxref_get_ingredients_for_rxcui(
         x,
         include_pin = include_pin,
         include_min = include_min
       )
-
-      if (show_progress) {
-        cli::cli_progress_update(id = progress_id)
-      }
-
-      result
-    }
-  )
-
-  if (show_progress) {
-    cli::cli_progress_done(id = progress_id)
-  }
-
-  dplyr::bind_rows(out) |>
+    },
+    name = "Finding ingredients",
+    show_progress = show_progress
+  ) |>
     dplyr::rename(rxcui = "related_rxcui")
 }

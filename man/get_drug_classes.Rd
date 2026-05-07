@@ -9,7 +9,8 @@ get_drug_classes(
   by = c("rxcui", "name"),
   include_sources = c("ATC", "EPC", "SNOMEDCT"),
   collapse = TRUE,
-  keep_input = TRUE
+  keep_input = TRUE,
+  show_progress = interactive()
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ returns the full source-specific rows, including matched RxCUI, drug name,
 and term type.}
 
 \item{keep_input}{Logical; if \code{TRUE}, includes the original input value.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble of class-like RxClass assertions.

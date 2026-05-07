@@ -9,7 +9,8 @@ get_medrt(
   by = c("rxcui", "name"),
   relas = NULL,
   class_types = NULL,
-  keep_input = TRUE
+  keep_input = TRUE,
+  show_progress = interactive()
 )
 }
 \arguments{
@@ -22,6 +23,9 @@ get_medrt(
 \item{class_types}{Optional MED-RT class type filter.}
 
 \item{keep_input}{Logical; if \code{TRUE}, includes the original input value.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble of MED-RT assertions.

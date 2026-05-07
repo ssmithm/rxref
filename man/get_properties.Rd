@@ -4,10 +4,12 @@
 \alias{get_properties}
 \title{Get core RxNorm properties for one or more RxCUIs}
 \usage{
-get_properties(rxcui)
+get_properties(rxcui, show_progress = interactive())
 }
 \arguments{
 \item{rxcui}{Character vector of RxCUIs}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.}
 }
 \value{
 tibble with rxcui, name, synonym, tty, language, suppress, umlscui.

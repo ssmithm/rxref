@@ -10,7 +10,8 @@ get_classes(
   rela_source = NULL,
   relas = NULL,
   class_types = NULL,
-  keep_input = TRUE
+  keep_input = TRUE,
+  show_progress = interactive()
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ or \code{"VA"}. May be a character vector; values are queried separately.}
 \code{"MOA"}, \code{"PE"}, \code{"DISEASE"}, \code{"CHEM"}, \code{"VA"}, or \code{"ATC1-4"}.}
 
 \item{keep_input}{Logical; if \code{TRUE}, includes the original input value.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble with one row per RxClass assertion.

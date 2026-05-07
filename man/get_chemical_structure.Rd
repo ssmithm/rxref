@@ -8,7 +8,8 @@ get_chemical_structure(
   x,
   by = c("rxcui", "name"),
   rela_source = c("FDASPL", "DAILYMED", "MEDRT"),
-  keep_input = TRUE
+  keep_input = TRUE,
+  show_progress = interactive()
 )
 }
 \arguments{
@@ -19,6 +20,9 @@ get_chemical_structure(
 \item{rela_source}{Relationship source. Defaults to FDASPL, DAILYMED, and MEDRT.}
 
 \item{keep_input}{Logical; if \code{TRUE}, includes the original input value.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble of chemical-structure assertions.

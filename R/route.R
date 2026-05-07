@@ -12,6 +12,8 @@
 #'   `"TOPICAL"`, `"RECTAL"`, `"VAGINAL"`, `"URETHRAL"`, and `"IMPLANT"`.
 #' @param keep_route_info Logical. If `TRUE` (default), append route, dose form, and
 #'   dose-form group summaries to the returned table.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble containing only rows whose `product_rxcui` has at least one
 #'   matching route.
@@ -32,7 +34,8 @@
 filter_products_by_route <- function(
     products,
     route = "ORAL",
-    keep_route_info = TRUE
+    keep_route_info = TRUE,
+    show_progress = interactive()
 ) {
   stopifnot(is.data.frame(products))
   stopifnot(is.character(route), length(route) >= 1)
@@ -47,7 +50,10 @@ filter_products_by_route <- function(
     return(products[0, , drop = FALSE])
   }
 
-  attrs <- get_clinical_attributes(product_ids)
+  attrs <- get_clinical_attributes(
+    product_ids,
+    show_progress = show_progress
+  )
 
   route_tbl <- attrs |>
     dplyr::group_by(product_rxcui = .data$rxcui) |>

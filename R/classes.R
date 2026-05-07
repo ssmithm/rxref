@@ -27,15 +27,20 @@
 #' @param class_types Optional filter on returned class types, such as `"EPC"`,
 #'   `"MOA"`, `"PE"`, `"DISEASE"`, `"CHEM"`, `"VA"`, or `"ATC1-4"`.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble with one row per RxClass assertion.
 #' @export
-get_classes <- function(x,
-                        by = c("rxcui", "name"),
-                        rela_source = NULL,
-                        relas = NULL,
-                        class_types = NULL,
-                        keep_input = TRUE) {
+get_classes <- function(
+    x,
+    by = c("rxcui", "name"),
+    rela_source = NULL,
+    relas = NULL,
+    class_types = NULL,
+    keep_input = TRUE,
+    show_progress = interactive()
+) {
   by <- match.arg(by)
 
   lifecycle::signal_stage("experimental", "get_classes()")
@@ -46,8 +51,17 @@ get_classes <- function(x,
     rela_source <- NA_character_
   }
 
-  purrr::map_dfr(x, function(.x) {
-    purrr::map_dfr(rela_source, function(.rela_source) {
+  grid <- tidyr::expand_grid(
+    x = unique(x),
+    rela_source = rela_source
+  )
+
+  .rxref_progress_map_dfr(
+    seq_len(nrow(grid)),
+    function(i) {
+      .x <- grid$x[[i]]
+      .rela_source <- grid$rela_source[[i]]
+
       query <- list()
 
       if (by == "rxcui") {
@@ -79,10 +93,12 @@ get_classes <- function(x,
       }
 
       out
-    })
-  })
+    },
+    name = "Getting classes",
+    show_progress = show_progress
+  ) |>
+    dplyr::distinct()
 }
-
 
 #' Get class-like RxClass assertions for RxNorm drugs
 #'
@@ -116,6 +132,8 @@ get_classes <- function(x,
 #'   returns the full source-specific rows, including matched RxCUI, drug name,
 #'   and term type.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of class-like RxClass assertions.
 #'
@@ -124,7 +142,8 @@ get_drug_classes <- function(x,
                              by = c("rxcui", "name"),
                              include_sources = c("ATC", "EPC", "SNOMEDCT"),
                              collapse = TRUE,
-                             keep_input = TRUE) {
+                             keep_input = TRUE,
+                             show_progress = interactive()) {
   by <- match.arg(by)
 
   lifecycle::signal_stage("experimental", "get_drug_classes()")
@@ -141,7 +160,8 @@ get_drug_classes <- function(x,
     out$atc <- get_atc(
       x = x,
       by = by,
-      keep_input = keep_input
+      keep_input = keep_input,
+      show_progress = show_progress
     )
   }
 
@@ -149,7 +169,8 @@ get_drug_classes <- function(x,
     out$atcprod <- get_atcprod(
       x = x,
       by = by,
-      keep_input = keep_input
+      keep_input = keep_input,
+      show_progress = show_progress
     )
   }
 
@@ -157,7 +178,8 @@ get_drug_classes <- function(x,
     out$epc <- get_epc(
       x = x,
       by = by,
-      keep_input = keep_input
+      keep_input = keep_input,
+      show_progress = show_progress
     )
   }
 
@@ -165,7 +187,8 @@ get_drug_classes <- function(x,
     out$va <- get_va(
       x = x,
       by = by,
-      keep_input = keep_input
+      keep_input = keep_input,
+      show_progress = show_progress
     )
   }
 
@@ -175,7 +198,8 @@ get_drug_classes <- function(x,
       by = by,
       rela_source = "SNOMEDCT",
       relas = "isa_disposition",
-      keep_input = keep_input
+      keep_input = keep_input,
+      show_progress = show_progress
     )
   }
 
@@ -222,17 +246,23 @@ get_drug_classes <- function(x,
 #' @param x Character vector of RxCUIs or drug names.
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of ATC class assertions.
 #' @export
-get_atc <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
+get_atc <- function(x,
+                    by = c("rxcui", "name"),
+                    keep_input = TRUE,
+                    show_progress = interactive()) {
   by <- match.arg(by)
 
   get_classes(
     x = x,
     by = by,
     rela_source = "ATC",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -246,17 +276,23 @@ get_atc <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
 #' @param x Character vector of RxCUIs or drug names.
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of ATCPROD class assertions.
 #' @export
-get_atcprod <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
+get_atcprod <- function(x,
+                        by = c("rxcui", "name"),
+                        keep_input = TRUE,
+                        show_progress = interactive()) {
   by <- match.arg(by)
 
   get_classes(
     x = x,
     by = by,
     rela_source = "ATCPROD",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -269,10 +305,15 @@ get_atcprod <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
 #' @param x Character vector of RxCUIs or drug names.
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of established pharmacologic class assertions.
 #' @export
-get_epc <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
+get_epc <- function(x,
+                    by = c("rxcui", "name"),
+                    keep_input = TRUE,
+                    show_progress = interactive()) {
   by <- match.arg(by)
 
   get_classes(
@@ -281,7 +322,8 @@ get_epc <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
     rela_source = c("DAILYMED", "FDASPL"),
     relas = "has_EPC",
     class_types = "EPC",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -298,6 +340,8 @@ get_epc <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
 #' @param relas Optional MED-RT relationship filter.
 #' @param class_types Optional MED-RT class type filter.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of MED-RT assertions.
 #' @export
@@ -305,7 +349,8 @@ get_medrt <- function(x,
                       by = c("rxcui", "name"),
                       relas = NULL,
                       class_types = NULL,
-                      keep_input = TRUE) {
+                      keep_input = TRUE,
+                      show_progress = interactive()) {
   by <- match.arg(by)
 
   get_classes(
@@ -314,7 +359,8 @@ get_medrt <- function(x,
     rela_source = "MEDRT",
     relas = relas,
     class_types = class_types,
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -330,10 +376,15 @@ get_medrt <- function(x,
 #' @param x Character vector of RxCUIs or drug names.
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of MED-RT mechanism-of-action assertions.
 #' @export
-get_medrt_moa <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
+get_medrt_moa <- function(x,
+                          by = c("rxcui", "name"),
+                          keep_input = TRUE,
+                          show_progress = interactive()) {
   by <- match.arg(by)
 
   get_medrt(
@@ -341,7 +392,8 @@ get_medrt_moa <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
     by = by,
     relas = "has_MoA",
     class_types = "MOA",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -354,10 +406,15 @@ get_medrt_moa <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
 #' @param x Character vector of RxCUIs or drug names.
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of MED-RT physiologic-effect assertions.
 #' @export
-get_medrt_pe <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
+get_medrt_pe <- function(x,
+                         by = c("rxcui", "name"),
+                         keep_input = TRUE,
+                         show_progress = interactive()) {
   by <- match.arg(by)
 
   get_medrt(
@@ -365,7 +422,8 @@ get_medrt_pe <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
     by = by,
     relas = "has_PE",
     class_types = "PE",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -378,12 +436,15 @@ get_medrt_pe <- function(x, by = c("rxcui", "name"), keep_input = TRUE) {
 #' @param x Character vector of RxCUIs or drug names.
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of MED-RT contraindication assertions.
 #' @export
 get_contraindications <- function(x,
                                   by = c("rxcui", "name"),
-                                  keep_input = TRUE) {
+                                  keep_input = TRUE,
+                                  show_progress = interactive()) {
   by <- match.arg(by)
 
   get_medrt(
@@ -391,7 +452,8 @@ get_contraindications <- function(x,
     by = by,
     relas = "ci_with",
     class_types = "DISEASE",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -406,12 +468,15 @@ get_contraindications <- function(x,
 #' @param x Character vector of RxCUIs or drug names.
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of MED-RT may-treat assertions.
 #' @export
 get_may_treat <- function(x,
                           by = c("rxcui", "name"),
-                          keep_input = TRUE) {
+                          keep_input = TRUE,
+                          show_progress = interactive()) {
   by <- match.arg(by)
 
   get_medrt(
@@ -419,7 +484,8 @@ get_may_treat <- function(x,
     by = by,
     relas = "may_treat",
     class_types = "DISEASE",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -433,13 +499,16 @@ get_may_treat <- function(x,
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param rela_source Relationship source. Defaults to FDASPL, DAILYMED, and MEDRT.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of chemical-structure assertions.
 #' @export
 get_chemical_structure <- function(x,
                                    by = c("rxcui", "name"),
                                    rela_source = c("FDASPL", "DAILYMED", "MEDRT"),
-                                   keep_input = TRUE) {
+                                   keep_input = TRUE,
+                                   show_progress = interactive()) {
   by <- match.arg(by)
 
   get_classes(
@@ -448,7 +517,8 @@ get_chemical_structure <- function(x,
     rela_source = rela_source,
     relas = "has_chemical_structure",
     class_types = "CHEM",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -462,13 +532,16 @@ get_chemical_structure <- function(x,
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param extended Logical; if `TRUE`, includes extended VA class assertions.
 #' @param keep_input Logical; if `TRUE`, includes the original input value.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble of VA class assertions.
 #' @export
 get_va <- function(x,
                    by = c("rxcui", "name"),
                    extended = TRUE,
-                   keep_input = TRUE) {
+                   keep_input = TRUE,
+                   show_progress = interactive()) {
   by <- match.arg(by)
 
   relas <- if (isTRUE(extended)) {
@@ -483,7 +556,8 @@ get_va <- function(x,
     rela_source = "VA",
     relas = relas,
     class_types = "VA",
-    keep_input = keep_input
+    keep_input = keep_input,
+    show_progress = show_progress
   )
 }
 
@@ -579,19 +653,23 @@ get_class_members <- function(class_id,
 #' @param x Character vector of RxCUIs or drug names.
 #' @param by One of `"rxcui"` or `"name"`.
 #' @param rela_source Optional RxClass relationship source filter.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
 #'
 #' @return A tibble summarizing available relationship/class-type combinations.
 #' @export
 rxclass_relationships <- function(x,
                                   by = c("rxcui", "name"),
-                                  rela_source = NULL) {
+                                  rela_source = NULL,
+                                  show_progress = interactive()) {
   by <- match.arg(by)
 
   get_classes(
     x = x,
     by = by,
     rela_source = rela_source,
-    keep_input = TRUE
+    keep_input = TRUE,
+    show_progress = show_progress
   ) |>
     dplyr::count(
       .data$input,

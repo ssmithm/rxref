@@ -6,29 +6,50 @@
 #' @param x Character vector: drug string, RxCUI, or NDC (10/11-digit or hyphenated)
 #' @param type One of c("auto","name","rxcui","ndc"). Default "auto" infers.
 #' @param max_entries Integer, passed to approximateTerm for name queries.
+#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Progress is shown only when at least 5 inputs are supplied.
+#'
 #' @return A tibble with columns: input, type, rxcui, name, tty, score (if name),
 #' ndc11 (if ndc input), matched_term (if name input)
 #' @export
-resolve <- function(x, type = c("auto","name","rxcui","ndc"), max_entries = 1) {
+resolve <- function(
+    x,
+    type = c("auto", "name", "rxcui", "ndc"),
+    max_entries = 1,
+    show_progress = interactive()
+) {
   stopifnot(is.character(x))
   type <- match.arg(type)
-  out <- purrr::imap(x, function(val, idx) {
-    t <- switch(type,
-                auto = {
-                  # Prefer NDC if it's 10/11 digits (with or without hyphens)
-                  if (is_ndcish(val)) "ndc" else if (is_rxcui(val)) "rxcui" else "name"
-                },
-                name = "name",
-                rxcui = "rxcui",
-                ndc   = "ndc"
-    )
-    switch(t,
-           name = resolve_name(val, max_entries = max_entries),
-           ndc = resolve_ndc(val),
-           rxcui = resolve_rxcui(val)
-    )
-  })
-  dplyr::bind_rows(out)
+
+  .rxref_progress_map_dfr(
+    x,
+    function(val) {
+      t <- switch(
+        type,
+        auto = {
+          if (is_ndcish(val)) {
+            "ndc"
+          } else if (is_rxcui(val)) {
+            "rxcui"
+          } else {
+            "name"
+          }
+        },
+        name = "name",
+        rxcui = "rxcui",
+        ndc = "ndc"
+      )
+
+      switch(
+        t,
+        name = resolve_name(val, max_entries = max_entries),
+        ndc = resolve_ndc(val),
+        rxcui = resolve_rxcui(val)
+      )
+    },
+    name = "Resolving inputs",
+    show_progress = show_progress
+  )
 }
 
 #' @keywords internal

@@ -4,7 +4,12 @@
 \alias{resolve}
 \title{Resolve free text, RxCUI, or NDC to RxCUI and preferred name}
 \usage{
-resolve(x, type = c("auto", "name", "rxcui", "ndc"), max_entries = 1)
+resolve(
+  x,
+  type = c("auto", "name", "rxcui", "ndc"),
+  max_entries = 1,
+  show_progress = interactive()
+)
 }
 \arguments{
 \item{x}{Character vector: drug string, RxCUI, or NDC (10/11-digit or hyphenated)}
@@ -12,6 +17,9 @@ resolve(x, type = c("auto", "name", "rxcui", "ndc"), max_entries = 1)
 \item{type}{One of c("auto","name","rxcui","ndc"). Default "auto" infers.}
 
 \item{max_entries}{Integer, passed to approximateTerm for name queries.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble with columns: input, type, rxcui, name, tty, score (if name),

@@ -4,10 +4,13 @@
 \alias{get_clinical_attributes}
 \title{Clinical attributes from the concept (SCD/SBD) or related SCD/SBD}
 \usage{
-get_clinical_attributes(rxcui)
+get_clinical_attributes(rxcui, show_progress = interactive())
 }
 \arguments{
 \item{rxcui}{Character vector of RxCUIs}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble with columns:

@@ -10,6 +10,7 @@ search_drug(
   ndc_status = NULL,
   ttys = .rxref_default_ttys,
   route = NULL,
+  show_progress = interactive(),
   ...
 )
 }
@@ -30,6 +31,9 @@ or a character vector of explicit TTYs. Run \code{tty_catalogue()} to review opt
 products or mapping to NDCs. If \code{NULL}, no route filtering is performed.
 Common values include \code{"ORAL"}, \code{"INJECTION"}, \code{"OPHTHALMIC"},
 \code{"INHALATION"}, and \code{"TOPICAL"}.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 
 \item{...}{Passed to \code{products_for_ingredients()} (e.g., include_combos = FALSE)}
 }

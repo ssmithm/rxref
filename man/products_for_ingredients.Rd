@@ -8,7 +8,8 @@ products_for_ingredients(
   ingredient_rxcui,
   ttys = .rxref_default_ttys,
   route = NULL,
-  include_combos = TRUE
+  include_combos = TRUE,
+  show_progress = interactive()
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ and may not filter well on other TTYs such as those in \code{.rxref_extended_tty
 
 \item{include_combos}{Logical; if \code{FALSE}, keep only single-ingredient
 products (counting distinct \code{IN}; if none present, falls back to distinct \code{PIN}).}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.}
 }
 \value{
 Tibble with columns: \code{ingredient_rxcui}, \code{product_rxcui}, \code{name}, \code{tty}, \code{n_ingredients}.

@@ -4,7 +4,12 @@
 \alias{rxclass_relationships}
 \title{Summarize RxClass relationship types for drugs}
 \usage{
-rxclass_relationships(x, by = c("rxcui", "name"), rela_source = NULL)
+rxclass_relationships(
+  x,
+  by = c("rxcui", "name"),
+  rela_source = NULL,
+  show_progress = interactive()
+)
 }
 \arguments{
 \item{x}{Character vector of RxCUIs or drug names.}
@@ -12,6 +17,9 @@ rxclass_relationships(x, by = c("rxcui", "name"), rela_source = NULL)
 \item{by}{One of \code{"rxcui"} or \code{"name"}.}
 
 \item{rela_source}{Optional RxClass relationship source filter.}
+
+\item{show_progress}{Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.}
 }
 \value{
 A tibble summarizing available relationship/class-type combinations.
