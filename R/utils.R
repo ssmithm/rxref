@@ -14,5 +14,5 @@
 #' @importFrom vctrs vec_recycle vec_cast vec_c vec_rbind
 #' @importFrom jsonlite fromJSON
 #' @importFrom memoise memoise cache_filesystem
-#' @importFrom rlang .data
+#' @importFrom rlang .data .env
 NULL
