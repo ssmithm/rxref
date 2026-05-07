@@ -7,6 +7,7 @@
 products_for_ingredients(
   ingredient_rxcui,
   ttys = .rxref_default_ttys,
+  route = NULL,
   include_combos = TRUE
 )
 }
@@ -16,6 +17,11 @@ products_for_ingredients(
 \item{ttys}{Character vector of TTYs to include (default: product-facing
 \code{c("SCD","SBD","GPCK","BPCK")}). Pass a larger set if you want groups,
 components, names, etc. (e.g., \code{c(.rxref_default_ttys, .rxref_extended_ttys)}).}
+
+\item{route}{Optional character vector of routes to retain. If \code{NULL}, no
+route filtering is performed. Route filtering uses \code{\link[=get_clinical_attributes]{get_clinical_attributes()}}.
+Note that route is intended for product-level TTYs (see \code{.rxref_default_ttys})
+and may not filter well on other TTYs such as those in \code{.rxref_extended_ttys}.}
 
 \item{include_combos}{Logical; if \code{FALSE}, keep only single-ingredient
 products (counting distinct \code{IN}; if none present, falls back to distinct \code{PIN}).}

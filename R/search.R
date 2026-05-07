@@ -69,12 +69,17 @@ find_ingredients <- function(term, max_entries = 10, include_pin = TRUE) {
 #' @param ttys Character vector of TTYs to include (default: product-facing
 #'   `c("SCD","SBD","GPCK","BPCK")`). Pass a larger set if you want groups,
 #'   components, names, etc. (e.g., `c(.rxref_default_ttys, .rxref_extended_ttys)`).
+#' @param route Optional character vector of routes to retain. If `NULL`, no
+#'   route filtering is performed. Route filtering uses [get_clinical_attributes()].
+#'   Note that route is intended for product-level TTYs (see `.rxref_default_ttys`)
+#'   and may not filter well on other TTYs such as those in `.rxref_extended_ttys`.
 #' @param include_combos Logical; if `FALSE`, keep only single-ingredient
 #'   products (counting distinct `IN`; if none present, falls back to distinct `PIN`).
 #' @return Tibble with columns: `ingredient_rxcui`, `product_rxcui`, `name`, `tty`, `n_ingredients`.
 #' @export
 products_for_ingredients <- function(ingredient_rxcui,
                                      ttys = .rxref_default_ttys,
+                                     route = NULL,
                                      include_combos = TRUE) {
   stopifnot(is.character(ingredient_rxcui), is.character(ttys), length(ttys) >= 1)
   tty_vec <- unique(ttys)
@@ -212,7 +217,7 @@ products_for_ingredients <- function(ingredient_rxcui,
     tibble::tibble(product_rxcui = prod_rxcui, n_ingredients = as.integer(n_total), contains = contains)
   }
 
-  purrr::map_dfr(ingredient_rxcui, function(ing) {
+  out <- purrr::map_dfr(ingredient_rxcui, function(ing) {
     # Union candidates from all sources
     cand_rela    <- fetch_via_rela(ing)
     cand_related <- fetch_via_related(ing)
@@ -240,18 +245,24 @@ products_for_ingredients <- function(ingredient_rxcui,
       name_pat = acc$name_pat
     )
 
-    out <- prods |>
+    out_ <- prods |>
       dplyr::left_join(chk, by = "product_rxcui") |>
       dplyr::filter(.data$contains %in% TRUE) |>
       dplyr::mutate(ingredient_rxcui = ing) |>
       dplyr::select(.data$ingredient_rxcui, .data$product_rxcui, .data$name, .data$tty, .data$n_ingredients)
 
     if (!isTRUE(include_combos)) {
-      out <- dplyr::filter(out, .data$n_ingredients <= 1L)
+      out_ <- dplyr::filter(out_, .data$n_ingredients <= 1L)
     }
-    out
+    out_
   }) |>
     dplyr::distinct()
+
+  if (!is.null(route)) {
+    out <- filter_products_by_route(out, route = route)
+  }
+
+  out
 }
 
 
@@ -261,12 +272,17 @@ products_for_ingredients <- function(ingredient_rxcui,
 #' CUIs, and optionally expand to NDCs with status filtering.
 #'
 #' @param term Character vector; free-text drug names.
-#' @param return One of `c("rxcui","ndc","both")`.
+#' @param return One of `c("rxcui","ndc","both")`. Note that `"both"` will return a list
+#'  with both an rxcui tibble and an ndc tibble.
 #' @param ndc_status Optional character vector to filter NDCs. Options are "ACTIVE",
 #'  "OBSOLETE", "UNSPECIFIED" (the API may also return no value, which will appear as NA).
 #' @param ttys Character vector of TTYs to include in product search.
 #'   Defaults to `.rxref_default_ttys`. Other prespecified option is `.rxref_extended_ttys`
 #'   or a character vector of explicit TTYs. Run `tty_catalogue()` to review options.
+#' @param route Optional character vector of routes to retain before returning
+#'   products or mapping to NDCs. If `NULL`, no route filtering is performed.
+#'   Common values include `"ORAL"`, `"INJECTION"`, `"OPHTHALMIC"`,
+#'   `"INHALATION"`, and `"TOPICAL"`.
 #' @param ... Passed to `products_for_ingredients()` (e.g., include_combos = FALSE)
 #' @return If `return="rxcui"`: tibble of products.
 #'   If `"ndc"`: tibble of NDCs with `ingredient_rxcui`, `product_rxcui`, `ndc11`, `ndc_status`.
@@ -276,6 +292,7 @@ search_drug <- function(term,
                         return = c("rxcui","ndc","both"),
                         ndc_status = NULL,
                         ttys = .rxref_default_ttys,
+                        route = NULL,
                         ...) {
   return <- match.arg(return)
 
@@ -303,6 +320,9 @@ search_drug <- function(term,
   }
 
   prods <- products_for_ingredients(ing_ids, ttys = ttys, ...)
+  if (!is.null(route)) {
+    prods <- filter_products_by_route(prods, route = route)
+  }
   if (return == "rxcui") return(prods)
 
   # Only product-ish TTYs cleanly map to NDCs

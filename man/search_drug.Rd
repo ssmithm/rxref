@@ -9,13 +9,15 @@ search_drug(
   return = c("rxcui", "ndc", "both"),
   ndc_status = NULL,
   ttys = .rxref_default_ttys,
+  route = NULL,
   ...
 )
 }
 \arguments{
 \item{term}{Character vector; free-text drug names.}
 
-\item{return}{One of \code{c("rxcui","ndc","both")}.}
+\item{return}{One of \code{c("rxcui","ndc","both")}. Note that \code{"both"} will return a list
+with both an rxcui tibble and an ndc tibble.}
 
 \item{ndc_status}{Optional character vector to filter NDCs. Options are "ACTIVE",
 "OBSOLETE", "UNSPECIFIED" (the API may also return no value, which will appear as NA).}
@@ -23,6 +25,11 @@ search_drug(
 \item{ttys}{Character vector of TTYs to include in product search.
 Defaults to \code{.rxref_default_ttys}. Other prespecified option is \code{.rxref_extended_ttys}
 or a character vector of explicit TTYs. Run \code{tty_catalogue()} to review options.}
+
+\item{route}{Optional character vector of routes to retain before returning
+products or mapping to NDCs. If \code{NULL}, no route filtering is performed.
+Common values include \code{"ORAL"}, \code{"INJECTION"}, \code{"OPHTHALMIC"},
+\code{"INHALATION"}, and \code{"TOPICAL"}.}
 
 \item{...}{Passed to \code{products_for_ingredients()} (e.g., include_combos = FALSE)}
 }
