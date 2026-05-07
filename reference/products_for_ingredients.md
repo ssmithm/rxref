@@ -10,6 +10,7 @@ appears only at the group level. Unions candidates from all sources.
 products_for_ingredients(
   ingredient_rxcui,
   ttys = .rxref_default_ttys,
+  route = NULL,
   include_combos = TRUE
 )
 ```
@@ -26,6 +27,15 @@ products_for_ingredients(
   `c("SCD","SBD","GPCK","BPCK")`). Pass a larger set if you want groups,
   components, names, etc. (e.g.,
   `c(.rxref_default_ttys, .rxref_extended_ttys)`).
+
+- route:
+
+  Optional character vector of routes to retain. If `NULL`, no route
+  filtering is performed. Route filtering uses
+  [`get_clinical_attributes()`](http://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md).
+  Note that route is intended for product-level TTYs (see
+  `.rxref_default_ttys`) and may not filter well on other TTYs such as
+  those in `.rxref_extended_ttys`.
 
 - include_combos:
 

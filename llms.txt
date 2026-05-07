@@ -171,6 +171,8 @@ aggregate(
 
 - [`get_clinical_attributes()`](http://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md)
   : Clinical attributes from the concept (SCD/SBD) or related SCD/SBD
+- [`filter_products_by_route()`](http://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md)
+  : Filter RxNorm product concepts by route of administration.
 
 ## Configurations
 
@@ -185,5 +187,7 @@ aggregate(
 
 - [Case Study: GLP1 receptor
   agonists](http://www.stevenmsmith.org/rxref/articles/case_study_glp1ra.md):
+- [Building route-specific RxCUI and NDC
+  lists](http://www.stevenmsmith.org/rxref/articles/route_specific_lists.md):
 - [rxref: Getting
   started](http://www.stevenmsmith.org/rxref/articles/rxref_intro.md):

@@ -12,6 +12,7 @@ search_drug(
   return = c("rxcui", "ndc", "both"),
   ndc_status = NULL,
   ttys = .rxref_default_ttys,
+  route = NULL,
   ...
 )
 ```
@@ -24,7 +25,8 @@ search_drug(
 
 - return:
 
-  One of `c("rxcui","ndc","both")`.
+  One of `c("rxcui","ndc","both")`. Note that `"both"` will return a
+  list with both an rxcui tibble and an ndc tibble.
 
 - ndc_status:
 
@@ -39,6 +41,13 @@ search_drug(
   `.rxref_extended_ttys` or a character vector of explicit TTYs. Run
   [`tty_catalogue()`](http://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)
   to review options.
+
+- route:
+
+  Optional character vector of routes to retain before returning
+  products or mapping to NDCs. If `NULL`, no route filtering is
+  performed. Common values include `"ORAL"`, `"INJECTION"`,
+  `"OPHTHALMIC"`, `"INHALATION"`, and `"TOPICAL"`.
 
 - ...:
 

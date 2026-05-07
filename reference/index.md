@@ -69,6 +69,8 @@
 
 - [`get_clinical_attributes()`](http://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md)
   : Clinical attributes from the concept (SCD/SBD) or related SCD/SBD
+- [`filter_products_by_route()`](http://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md)
+  : Filter RxNorm product concepts by route of administration.
 
 ## Configurations
 
