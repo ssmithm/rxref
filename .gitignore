@@ -1,10 +1,15 @@
 # General
+^\.DS_Store$
+^\.Rhistory$
+^\.Rprofile$
 .DS_Store
 .localized
 __MACOSX/
 .AppleDouble
 .LSOverride
 Icon[]
+^cran-comments\.md$
+^CRAN-SUBMISSION$
 
 # Resource forks
 ._*
