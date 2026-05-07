@@ -249,7 +249,7 @@ products_for_ingredients <- function(ingredient_rxcui,
       dplyr::left_join(chk, by = "product_rxcui") |>
       dplyr::filter(.data$contains %in% TRUE) |>
       dplyr::mutate(ingredient_rxcui = ing) |>
-      dplyr::select(.data$ingredient_rxcui, .data$product_rxcui, .data$name, .data$tty, .data$n_ingredients)
+      dplyr::select("ingredient_rxcui", "product_rxcui", "name", "tty", "n_ingredients")
 
     if (!isTRUE(include_combos)) {
       out_ <- dplyr::filter(out_, .data$n_ingredients <= 1L)
@@ -411,5 +411,5 @@ ingredients_for_rxcui <- function(
   }
 
   dplyr::bind_rows(out) |>
-    dplyr::rename(rxcui = .data$related_rxcui)
+    dplyr::rename(rxcui = "related_rxcui")
 }
