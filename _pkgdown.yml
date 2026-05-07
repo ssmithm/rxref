@@ -13,6 +13,8 @@ navbar:
           href: articles/rxref_intro.html
         - text: "Case study: GLP-1 receptor agonists"
           href: articles/case_study_glp1ra.html
+        - text: "Building route-specific RxCUI and NDC lists"
+          href: articles/route_specific_lists.html
 
 reference:
   - title: "Core verbs"
@@ -53,6 +55,7 @@ reference:
   - title: "Clinical utilities"
     contents:
       - get_clinical_attributes
+      - filter_products_by_route
 
   - title: "Configurations"
     contents:
