@@ -64,24 +64,23 @@ glp1.ings
 ### Getting Product RxCUIs from Ingredient RxCUIs
 
 Now, let’s look for all of the related RxCUIs using
-`product_from_ingredients()`. Here, we’re going to just focus on the
-TTYs that are likely to have NDCs (SCD, SBD, GPCK, BPCK) by using the
+`product_for_ingredients()`. Here, we’re going to just focus on the TTYs
+that are likely to have NDCs (SCD, SBD, GPCK, BPCK) by using the
 function’s default TTY.
 
 There are two default TTY lists:
 
-- **.rxref_default_ttys** = “SCD”, “SBD”, “GPCK”, “BPCK”
+- **default** = “SCD”, “SBD”, “GPCK”, “BPCK”
 
-- **.rxref_extended_ttys** = “SCD”, “SBD”, “GPCK”, “BPCK”, “SCDC”,
-  “SBDC”, “SCDF”, “SBDF”, “SCDFP”, “SBDFP”, “SCDG”, “SCDGP”, “BN”,
-  “MIN”, “IN”
+- **extended** = “SCD”, “SBD”, “GPCK”, “BPCK”, “SCDC”, “SBDC”, “SCDF”,
+  “SBDF”, “SCDFP”, “SBDFP”, “SCDG”, “SCDGP”, “BN”, “MIN”, “IN”
 
 But, you could supply your own set of TTYs to include instead of using
 these two default lists.
 
 Lastly, we’re going to include combination products (i.e., if they have
 a GLP1-RA plus one or more other drugs), again using the function’s
-default option of include_combo = TRUE.
+default option of include_combos = TRUE.
 
 ``` r
 

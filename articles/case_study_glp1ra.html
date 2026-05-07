@@ -130,22 +130,21 @@ you can get a complete list of TTYs and their description from
 <h3 id="getting-product-rxcuis-from-ingredient-rxcuis">Getting Product RxCUIs from Ingredient RxCUIs<a class="anchor" aria-label="anchor" href="#getting-product-rxcuis-from-ingredient-rxcuis"></a>
 </h3>
 <p>Now, let’s look for all of the related RxCUIs using
-<code>product_from_ingredients()</code>. Here, we’re going to just focus
+<code>product_for_ingredients()</code>. Here, we’re going to just focus
 on the TTYs that are likely to have NDCs (SCD, SBD, GPCK, BPCK) by using
 the function’s default TTY.</p>
 <p>There are two default TTY lists:</p>
 <ul>
-<li><p><strong>.rxref_default_ttys</strong> = “SCD”, “SBD”, “GPCK”,
-“BPCK”</p></li>
-<li><p><strong>.rxref_extended_ttys</strong> = “SCD”, “SBD”, “GPCK”,
-“BPCK”, “SCDC”, “SBDC”, “SCDF”, “SBDF”, “SCDFP”, “SBDFP”, “SCDG”,
-“SCDGP”, “BN”, “MIN”, “IN”</p></li>
+<li><p><strong>default</strong> = “SCD”, “SBD”, “GPCK”, “BPCK”</p></li>
+<li><p><strong>extended</strong> = “SCD”, “SBD”, “GPCK”, “BPCK”, “SCDC”,
+“SBDC”, “SCDF”, “SBDF”, “SCDFP”, “SBDFP”, “SCDG”, “SCDGP”, “BN”, “MIN”,
+“IN”</p></li>
 </ul>
 <p>But, you could supply your own set of TTYs to include instead of
 using these two default lists.</p>
 <p>Lastly, we’re going to include combination products (i.e., if they
 have a GLP1-RA plus one or more other drugs), again using the function’s
-default option of include_combo = TRUE.</p>
+default option of include_combos = TRUE.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="co"># run this next line only, if recreating on your own</span></span>
