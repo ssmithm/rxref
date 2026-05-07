@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/ssmithm/rxref/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/ssmithm/rxref/blob/v0.2.2/inst/CITATION)
 
 Smith S (2025). *rxref: Tidy RxNorm Utilities*. R package version 0.1.0,
 <https://www.stevenmsmith.org/rxref>.
