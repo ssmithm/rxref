@@ -6,7 +6,12 @@ NDC, uses findRxcuiById. For RxCUI, validates and returns properties.
 ## Usage
 
 ``` r
-resolve(x, type = c("auto", "name", "rxcui", "ndc"), max_entries = 1)
+resolve(
+  x,
+  type = c("auto", "name", "rxcui", "ndc"),
+  max_entries = 1,
+  show_progress = interactive()
+)
 ```
 
 ## Arguments
@@ -23,6 +28,11 @@ resolve(x, type = c("auto", "name", "rxcui", "ndc"), max_entries = 1)
 - max_entries:
 
   Integer, passed to approximateTerm for name queries.
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 

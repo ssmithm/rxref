@@ -7,7 +7,12 @@ and filters to ingredient-type concepts (TTY `IN` and, optionally,
 ## Usage
 
 ``` r
-find_ingredients(term, max_entries = 10, include_pin = TRUE)
+find_ingredients(
+  term,
+  max_entries = 10,
+  include_pin = TRUE,
+  show_progress = interactive()
+)
 ```
 
 ## Arguments
@@ -23,6 +28,11 @@ find_ingredients(term, max_entries = 10, include_pin = TRUE)
 - include_pin:
 
   Logical. Include precise-ingredient (`PIN`) CUIs (default TRUE).
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 

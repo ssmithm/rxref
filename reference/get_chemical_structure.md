@@ -11,7 +11,8 @@ get_chemical_structure(
   x,
   by = c("rxcui", "name"),
   rela_source = c("FDASPL", "DAILYMED", "MEDRT"),
-  keep_input = TRUE
+  keep_input = TRUE,
+  show_progress = interactive()
 )
 ```
 
@@ -32,6 +33,11 @@ get_chemical_structure(
 - keep_input:
 
   Logical; if `TRUE`, includes the original input value.
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 

@@ -46,7 +46,12 @@ filters to ingredient-type concepts (TTY <code>IN</code> and, optionally, <code>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">find_ingredients</span><span class="op">(</span><span class="va">term</span>, max_entries <span class="op">=</span> <span class="fl">10</span>, include_pin <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">find_ingredients</span><span class="op">(</span></span>
+<span>  <span class="va">term</span>,</span>
+<span>  max_entries <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  include_pin <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  show_progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -63,6 +68,11 @@ filters to ingredient-type concepts (TTY <code>IN</code> and, optionally, <code>
 
 <dt id="arg-include-pin">include_pin<a class="anchor" aria-label="anchor" href="#arg-include-pin"></a></dt>
 <dd><p>Logical. Include precise-ingredient (<code>PIN</code>) CUIs (default TRUE).</p></dd>
+
+
+<dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>
+<dd><p>Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.</p></dd>
 
 </dl></div>
     <div class="section level2">

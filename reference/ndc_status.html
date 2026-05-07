@@ -52,7 +52,7 @@ when RxNorm has no status for a given NDC, or if an invalid NDC is supplied.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ndc_status</span><span class="op">(</span><span class="va">ndc</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ndc_status</span><span class="op">(</span><span class="va">ndc</span>, show_progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -61,6 +61,11 @@ when RxNorm has no status for a given NDC, or if an invalid NDC is supplied.</p>
 
 <dl><dt id="arg-ndc">ndc<a class="anchor" aria-label="anchor" href="#arg-ndc"></a></dt>
 <dd><p>character vector; hyphenated or digits</p></dd>
+
+
+<dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>
+<dd><p>Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.</p></dd>
 
 </dl></div>
     <div class="section level2">

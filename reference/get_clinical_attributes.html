@@ -46,7 +46,7 @@ from its own name. Otherwise, query <code>/rxcui/{id}/related?tty=SCD,SBD</code>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_clinical_attributes</span><span class="op">(</span><span class="va">rxcui</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_clinical_attributes</span><span class="op">(</span><span class="va">rxcui</span>, show_progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -55,6 +55,11 @@ from its own name. Otherwise, query <code>/rxcui/{id}/related?tty=SCD,SBD</code>
 
 <dl><dt id="arg-rxcui">rxcui<a class="anchor" aria-label="anchor" href="#arg-rxcui"></a></dt>
 <dd><p>Character vector of RxCUIs</p></dd>
+
+
+<dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>
+<dd><p>Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.</p></dd>
 
 </dl></div>
     <div class="section level2">

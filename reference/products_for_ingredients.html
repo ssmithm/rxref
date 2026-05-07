@@ -53,7 +53,8 @@ only at the group level. Unions candidates from all sources.</p>
 <span>  <span class="va">ingredient_rxcui</span>,</span>
 <span>  ttys <span class="op">=</span> <span class="va">.rxref_default_ttys</span>,</span>
 <span>  route <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  include_combos <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  show_progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -81,6 +82,10 @@ and may not filter well on other TTYs such as those in <code>.rxref_extended_tty
 <dt id="arg-include-combos">include_combos<a class="anchor" aria-label="anchor" href="#arg-include-combos"></a></dt>
 <dd><p>Logical; if <code>FALSE</code>, keep only single-ingredient
 products (counting distinct <code>IN</code>; if none present, falls back to distinct <code>PIN</code>).</p></dd>
+
+
+<dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>
+<dd><p>Logical. Show a progress bar in interactive sessions.</p></dd>
 
 </dl></div>
     <div class="section level2">

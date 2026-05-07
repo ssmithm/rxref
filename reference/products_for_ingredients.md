@@ -11,7 +11,8 @@ products_for_ingredients(
   ingredient_rxcui,
   ttys = .rxref_default_ttys,
   route = NULL,
-  include_combos = TRUE
+  include_combos = TRUE,
+  show_progress = interactive()
 )
 ```
 
@@ -41,6 +42,10 @@ products_for_ingredients(
 
   Logical; if `FALSE`, keep only single-ingredient products (counting
   distinct `IN`; if none present, falls back to distinct `PIN`).
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions.
 
 ## Value
 

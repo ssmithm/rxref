@@ -26,12 +26,13 @@ map_rxcui_to_ndc(x, status = NULL, show_progress = interactive())
 
 - status:
 
-  For `to = "ndc"`, filter by NDC status (e.g., "ACTIVE"). Use NULL for
+  For `to = "ndc"`, filter by NDC status, e.g., "ACTIVE". Use NULL for
   all.
 
 - show_progress:
 
-  Logical. Show a progress bar in interactive sessions.
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 

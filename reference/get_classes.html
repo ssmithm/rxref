@@ -76,7 +76,8 @@ collapsing results into a single class label.</p>
 <span>  rela_source <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  relas <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  class_types <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  keep_input <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  keep_input <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  show_progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -111,6 +112,11 @@ or <code>"VA"</code>. May be a character vector; values are queried separately.<
 
 <dt id="arg-keep-input">keep_input<a class="anchor" aria-label="anchor" href="#arg-keep-input"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, includes the original input value.</p></dd>
+
+
+<dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>
+<dd><p>Logical. Show a progress bar in interactive sessions.
+Progress is shown only when at least 5 inputs are supplied.</p></dd>
 
 </dl></div>
     <div class="section level2">

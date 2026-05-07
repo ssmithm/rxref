@@ -13,6 +13,7 @@ search_drug(
   ndc_status = NULL,
   ttys = .rxref_default_ttys,
   route = NULL,
+  show_progress = interactive(),
   ...
 )
 ```
@@ -48,6 +49,11 @@ search_drug(
   products or mapping to NDCs. If `NULL`, no route filtering is
   performed. Common values include `"ORAL"`, `"INJECTION"`,
   `"OPHTHALMIC"`, `"INHALATION"`, and `"TOPICAL"`.
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 - ...:
 

@@ -23,7 +23,8 @@ get_classes(
   rela_source = NULL,
   relas = NULL,
   class_types = NULL,
-  keep_input = TRUE
+  keep_input = TRUE,
+  show_progress = interactive()
 )
 ```
 
@@ -57,6 +58,11 @@ get_classes(
 - keep_input:
 
   Logical; if `TRUE`, includes the original input value.
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 

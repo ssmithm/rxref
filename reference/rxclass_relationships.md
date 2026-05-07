@@ -12,7 +12,12 @@ by MED-RT).
 ## Usage
 
 ``` r
-rxclass_relationships(x, by = c("rxcui", "name"), rela_source = NULL)
+rxclass_relationships(
+  x,
+  by = c("rxcui", "name"),
+  rela_source = NULL,
+  show_progress = interactive()
+)
 ```
 
 ## Arguments
@@ -28,6 +33,11 @@ rxclass_relationships(x, by = c("rxcui", "name"), rela_source = NULL)
 - rela_source:
 
   Optional RxClass relationship source filter.
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 

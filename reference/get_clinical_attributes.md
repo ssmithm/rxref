@@ -7,7 +7,7 @@ attributes directly from its own name. Otherwise, query
 ## Usage
 
 ``` r
-get_clinical_attributes(rxcui)
+get_clinical_attributes(rxcui, show_progress = interactive())
 ```
 
 ## Arguments
@@ -15,6 +15,11 @@ get_clinical_attributes(rxcui)
 - rxcui:
 
   Character vector of RxCUIs
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 

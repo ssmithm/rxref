@@ -5,7 +5,7 @@ Get core RxNorm properties for one or more RxCUIs
 ## Usage
 
 ``` r
-get_properties(rxcui)
+get_properties(rxcui, show_progress = interactive())
 ```
 
 ## Arguments
@@ -13,6 +13,10 @@ get_properties(rxcui)
 - rxcui:
 
   Character vector of RxCUIs
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions.
 
 ## Value
 

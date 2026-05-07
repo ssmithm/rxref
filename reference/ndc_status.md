@@ -9,7 +9,7 @@ for a given NDC, or if an invalid NDC is supplied.
 ## Usage
 
 ``` r
-ndc_status(ndc)
+ndc_status(ndc, show_progress = interactive())
 ```
 
 ## Arguments
@@ -17,6 +17,11 @@ ndc_status(ndc)
 - ndc:
 
   character vector; hyphenated or digits
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 

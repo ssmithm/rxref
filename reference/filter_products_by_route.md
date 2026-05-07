@@ -9,7 +9,12 @@ topical formulations.
 ## Usage
 
 ``` r
-filter_products_by_route(products, route = "ORAL", keep_route_info = TRUE)
+filter_products_by_route(
+  products,
+  route = "ORAL",
+  keep_route_info = TRUE,
+  show_progress = interactive()
+)
 ```
 
 ## Arguments
@@ -29,6 +34,11 @@ filter_products_by_route(products, route = "ORAL", keep_route_info = TRUE)
 
   Logical. If `TRUE` (default), append route, dose form, and dose-form
   group summaries to the returned table.
+
+- show_progress:
+
+  Logical. Show a progress bar in interactive sessions. Progress is
+  shown only when at least 5 inputs are supplied.
 
 ## Value
 
