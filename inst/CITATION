@@ -4,7 +4,7 @@ citEntry(
   entry    = "Manual",
   title    = "rxref: Tidy RxNorm Utilities",
   author   = person("Steven", "Smith"),
-  year     = "2025",
-  note     = "R package version 0.1.0",
+  year     = "2026",
+  note     = "R package version 0.2.2",
   url      = "https://www.stevenmsmith.org/rxref"
 )
