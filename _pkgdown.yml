@@ -37,7 +37,7 @@ reference:
       - product_ttys
       - default_product_ttys
       - extended_product_ttys
-      - extended_ttys product_ttys
+      - extended_ttys
 
   - title: "RxClass Search & catalog utilities"
     contents:
