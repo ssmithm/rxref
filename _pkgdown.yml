@@ -30,7 +30,14 @@ reference:
       - ingredients_for_rxcui
       - products_for_ingredients
       - search_drug
+
+  - title: "TTY helper functions"
+    contents:
       - tty_catalogue
+      - product_ttys
+      - default_product_ttys
+      - extended_product_ttys
+      - extended_ttys product_ttys
 
   - title: "RxClass Search & catalog utilities"
     contents:
