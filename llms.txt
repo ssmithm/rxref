@@ -126,8 +126,19 @@ aggregate(
   ingredient
 - [`search_drug()`](http://www.stevenmsmith.org/rxref/reference/search_drug.md)
   : Search free-text drug name and return product CUIs and/or NDCs
+
+## TTY helper functions
+
 - [`tty_catalogue()`](http://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)
   : Catalogue of RxNorm TTY (Term Types)
+- [`product_ttys()`](http://www.stevenmsmith.org/rxref/reference/product_ttys.md)
+  : RxNorm product term type sets
+- [`default_product_ttys()`](http://www.stevenmsmith.org/rxref/reference/default_product_ttys.md)
+  : Default RxNorm product term types
+- [`extended_product_ttys()`](http://www.stevenmsmith.org/rxref/reference/extended_product_ttys.md)
+  : Extended RxNorm product term types
+- [`extended_ttys()`](http://www.stevenmsmith.org/rxref/reference/extended_ttys.md)
+  : Extended RxNorm term types
 
 ## RxClass Search & catalog utilities
 
