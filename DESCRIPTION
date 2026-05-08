@@ -14,6 +14,7 @@ BugReports: https://github.com/ssmithm/rxref/issues
 Depends:
 	R (>= 4.1)
 Imports:
+	cachem,
 	cli, 
 	digest,
 	dplyr,

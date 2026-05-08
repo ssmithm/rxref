@@ -65,3 +65,124 @@ tty_catalogue <- function() {
       include_extended = .data$tty %in% extended_set
     )
 }
+
+
+# Some helpers:
+# Default product-ish TTYs (good for mapping to NDC)
+.rxref_default_ttys <- c(
+  "SCD",  # Semantic Clinical Drug
+  "SBD",  # Semantic Branded Drug
+  "GPCK", # Generic Pack
+  "BPCK"  # Brand Pack
+)
+
+.rxref_extended_product_ttys <- c(
+  .rxref_default_ttys,
+  "SCDG",  # Semantic Clinical Dose Form Group
+  "SBDG",  # Semantic Branded Dose Form Group
+  "SCDF",  # Semantic Clinical Dose Form
+  "SBDF",  # Semantic Branded Dose Form
+  "SBDFP", # Semantic Branded Drug Form Precise
+  "SCDFP", # Semantic Clinical Drug Form Precise
+  "SCDGP" # Semantic Clinical Dose Form Group Precise
+)
+
+# Extended “structure/group” TTYs for richer CUIs; note many of these will rarely map to NDC,
+# but may be useful in RXCUI searches, particularly where RXCUIs are not cleanly mapped to a
+# very limited set of prescribable products.
+# - Default product TTYs: SCD, SBD, GPCK, BPCK
+# - Components: SCDC, SBDC
+# - Drug forms / groups: SCDF, SBDF, SCDFP, SBDFP, SCDG, SCDGP
+# - Names / ingredients: BN (brand name), MIN (multi-ingredient), IN (ingredients)
+.rxref_extended_ttys <- c(
+  .rxref_extended_product_ttys,
+  "SCDC",  # Semantic Clinical Drug Component
+  "SBDC",  # Semantic Branded Drug Component
+  "BN",    # Brand Name
+  "MIN",   # Multiple Ingredients
+  "PIN",   # Precise Ingredient
+  "IN"     # Ingredient
+  )
+
+#' Default RxNorm product term types
+#'
+#' Returns the default RxNorm term types used by rxref when identifying
+#' drug products.
+#'
+#' The default set is intentionally focused on product-level concepts:
+#' semantic clinical drugs, semantic branded drugs, generic packs, and
+#' branded packs.
+#'
+#' @return A character vector of RxNorm term type abbreviations.
+#'
+#' @examples
+#' default_product_ttys()
+#'
+#' @export
+default_product_ttys <- function() {
+  .rxref_default_ttys
+}
+
+
+#' Extended RxNorm product term types
+#'
+#' Returns an extended set of RxNorm term types that includes the default
+#' product term types plus dose-form and dose-form-group concepts.
+#'
+#' This can be useful when a broader set of product-related RxNorm concepts
+#' is desired.
+#'
+#' @return A character vector of RxNorm term type abbreviations.
+#'
+#' @examples
+#' extended_product_ttys()
+#'
+#' @export
+extended_product_ttys <- function() {
+  .rxref_extended_product_ttys
+}
+
+#' Extended RxNorm term types
+#'
+#' Returns an extended set of RxNorm term types that includes the default and extended
+#' product term types plus drug component, brand name, and ingredient concepts.
+#' This list includes essentially all term types that capture a specific ingredient,
+#' thus it excludes dose form, dose form group, prescribable name, synonyms, and others
+#' that are not associated with a specific ingredient.
+#'
+#' This can be useful when the broadest set of RxNorm concepts that still capture an ingredient
+#' is desired.
+#'
+#' @return A character vector of RxNorm term type abbreviations.
+#'
+#' @examples
+#' extended_ttys()
+#'
+#' @export
+extended_ttys <- function() {
+  .rxref_extended_ttys
+}
+
+#' RxNorm product term type sets
+#'
+#' Returns common RxNorm term type sets used by rxref.
+#'
+#' @param set One of `"default"`, `"extended_product"`, or `"extended"`.
+#'
+#' @return A character vector of RxNorm term type abbreviations.
+#'
+#' @examples
+#' product_ttys()
+#' product_ttys("extended")
+#'
+#' @export
+product_ttys <- function(set = c("default", "extended_product", "extended")) {
+  set <- match.arg(set)
+
+  switch(
+    set,
+    default = default_product_ttys(),
+    extended_product = extended_product_ttys(),
+    extended = extended_ttys()
+  )
+}

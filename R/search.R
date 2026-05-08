@@ -1,17 +1,3 @@
-# Some helpers:
-# Default product-ish TTYs (good for mapping to NDC)
-.rxref_default_ttys <- c("SCD", "SBD", "GPCK", "BPCK")
-
-# Extended “structure/group” TTYs for richer CUIs; note many of these will rarely map to NDC,
-# but may be useful in RXCUI searches, particularly where RXCUIs are not cleanly mapped to a
-# very limited set of prescribable products.
-# - Default product TTYs: SCD, SBD, GPCK, BPCK
-# - Components: SCDC, SBDC
-# - Drug forms / groups: SCDF, SBDF, SCDFP, SBDFP, SCDG, SCDGP
-# - Names / ingredients: BN (brand name), MIN (multi-ingredient), IN (ingredients)
-.rxref_extended_ttys <- c("SCD","SBD","GPCK","BPCK","SCDC","SBDC","SCDF","SBDF","SCDFP","SBDFP","SCDG","SCDGP","BN","MIN","IN")
-
-
 #' Resolve a free-text drug name to ingredient CUIs (IN/PIN)
 #'
 #' Uses RxNav approximateTerm, then fetches properties for each candidate and

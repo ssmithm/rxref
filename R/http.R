@@ -16,31 +16,108 @@ rx_sleep <- function() {
   if (isTRUE(delay > 0)) Sys.sleep(delay)
 }
 
+#' Perform an RxNav/RxClass request and parse JSON
+#'
+#' @param req An httr2 request object.
+#' @param service Character label for the service, e.g. "RxNorm" or "RxClass".
+#'
+#' @return Parsed JSON as a list.
+#'
+#' @keywords internal
+#' @noRd
+rx_perform_json <- function(req, service = "RxNav") {
+  resp <- tryCatch(
+    httr2::req_perform(req),
+    error = function(e) {
+      cli::cli_abort(
+        c(
+          "Could not reach the {service} API.",
+          "i" = "Check your internet connection or try again later.",
+          "i" = "Original error: {conditionMessage(e)}"
+        ),
+        class = "rxref_api_error"
+      )
+    }
+  )
+
+  tryCatch(
+    httr2::resp_check_status(resp),
+    error = function(e) {
+      status <- httr2::resp_status(resp)
+
+      cli::cli_abort(
+        c(
+          "The {service} API returned an unsuccessful response.",
+          "i" = "HTTP status: {status}.",
+          "i" = "Original error: {conditionMessage(e)}"
+        ),
+        class = "rxref_api_error"
+      )
+    }
+  )
+
+  txt <- tryCatch(
+    httr2::resp_body_string(resp),
+    error = function(e) {
+      cli::cli_abort(
+        c(
+          "Could not read the response from the {service} API.",
+          "i" = "Original error: {conditionMessage(e)}"
+        ),
+        class = "rxref_api_error"
+      )
+    }
+  )
+
+  tryCatch(
+    jsonlite::fromJSON(txt, simplifyVector = FALSE),
+    error = function(e) {
+      cli::cli_abort(
+        c(
+          "Could not parse the response from the {service} API as JSON.",
+          "i" = "The API response may have changed or may be temporarily unavailable.",
+          "i" = "Original error: {conditionMessage(e)}"
+        ),
+        class = "rxref_api_error"
+      )
+    }
+  )
+}
+
 
 #' @keywords internal
 #' @noRd
-rx_get_json <- (function(){
-
+#' @keywords internal
+#' @noRd
+rx_get_json <- (function() {
   get_cache <- function() {
     opt <- getOption("rxref.cache")
     if (inherits(opt, "memoise_cache")) return(opt)
-    digest("rxref")
-    memoise::cache_filesystem(path = tools::R_user_dir("rxref", which = "cache"))
+
+    memoise::cache_filesystem(
+      path = tools::R_user_dir("rxref", which = "cache")
+    )
   }
+
   mem_fun <- memoise::memoise(
     function(path, query = list()) {
       rx_sleep()
-      path_json <- if (grepl("\\.json$", path)) path else paste0(path, ".json")
+
+      path_json <- if (grepl("\\.json$", path)) {
+        path
+      } else {
+        paste0(path, ".json")
+      }
+
       req <- rx_http_client() |>
         httr2::req_url_path_append(path_json) |>
         httr2::req_url_query(!!!query, .multi = "explode")
-      resp <- httr2::req_perform(req)
-      httr2::resp_check_status(resp)
-      txt <- httr2::resp_body_string(resp)
-      jsonlite::fromJSON(txt, simplifyVector = FALSE)
+
+      rx_perform_json(req, service = "RxNorm")
     },
     cache = get_cache()
   )
+
   mem_fun
 })()
 
@@ -71,28 +148,35 @@ rxclass_get_json <- (function() {
   get_cache <- function() {
     opt <- getOption("rxref.cache")
     if (inherits(opt, "memoise_cache")) return(opt)
-    digest("rxref")
+
     memoise::cache_filesystem(
       path = tools::R_user_dir("rxref", which = "cache")
     )
   }
+
   mem_fun <- memoise::memoise(
     function(path, query = list()) {
       rx_sleep()
-      path_json <- if (grepl("\\.json$", path)) path else paste0(path, ".json")
+
+      path_json <- if (grepl("\\.json$", path)) {
+        path
+      } else {
+        paste0(path, ".json")
+      }
+
       req <- rxclass_http_client() |>
         httr2::req_url_path_append(path_json) |>
         httr2::req_url_query(!!!query, .multi = "explode")
-      resp <- httr2::req_perform(req)
-      httr2::resp_check_status(resp)
-      txt <- httr2::resp_body_string(resp)
-      jsonlite::fromJSON(txt, simplifyVector = FALSE)
+
+      rx_perform_json(req, service = "RxClass")
     },
     cache = get_cache()
   )
 
   mem_fun
 })()
+
+
 
 #' @keywords internal
 #' @noRd
@@ -119,9 +203,11 @@ vec_recycle_len <- function(x, n) vctrs::vec_recycle(x, n)
 #' @keywords internal
 #' @noRd
 is_rxcui <- function(x) {
-  if (!is.character(x)) return(FALSE)
+  if (!is.character(x) || length(x) != 1L || is.na(x)) return(FALSE)
+
   # Only digits
   if (!grepl("^[0-9]+$", x)) return(FALSE)
+
   # If it's 10 or 11 digits, treat as NDC-ish, not RxCUI
   !nchar(x) %in% c(10L, 11L)
 }
@@ -129,8 +215,10 @@ is_rxcui <- function(x) {
 #' @keywords internal
 #' @noRd
 is_ndcish <- function(x) {
-  if (!is.character(x)) return(FALSE)
-  digits <- gsub("-", "", x)
+  if (!is.character(x) || length(x) != 1L || is.na(x)) return(FALSE)
+
+  digits <- gsub("[^0-9]", "", x)
+
   grepl("^[0-9]{10,11}$", digits)
 }
 
@@ -138,57 +226,159 @@ is_ndcish <- function(x) {
 #' @keywords internal
 #' @noRd
 .ndc_parts_from_string <- function(x) {
-  x <- gsub("[^0-9-]", "", x)
-  if (grepl("^\\d+-\\d+-\\d+$", x)) {
-    p <- strsplit(x, "-", fixed = TRUE)[[1]]
-    return(list(labeler=p[1], product=p[2], package=p[3], raw=x))
+  if (!is.character(x) || length(x) != 1L || is.na(x)) {
+    return(list(
+      labeler = NA_character_,
+      product = NA_character_,
+      package = NA_character_,
+      raw = x
+    ))
   }
-  digits <- gsub("-", "", x)
-  if (!grepl("^[0-9]{10,11}$", digits)) return(list(labeler=NA, product=NA, package=NA, raw=x))
-  # If 11 digits, assume already 5-4-2
-  if (nchar(digits) == 11) {
-    return(list(labeler=substr(digits,1,5), product=substr(digits,6,9), package=substr(digits,10,11), raw=x))
+
+  raw <- x
+  x <- trimws(x)
+
+  # Preserve hyphenated structure if present
+  cleaned <- gsub("[^0-9-]", "", x)
+
+  if (grepl("^\\d+-\\d+-\\d+$", cleaned)) {
+    p <- strsplit(cleaned, "-", fixed = TRUE)[[1]]
+
+    return(list(
+      labeler = p[[1]],
+      product = p[[2]],
+      package = p[[3]],
+      raw = raw
+    ))
   }
-  # If 10 digits, we can't know grouping for sure—fall back to common heuristics via hyphen input
-  # Leave as unknown; callers can attempt guesses if needed
-  list(labeler=NA, product=NA, package=NA, raw=x)
+
+  digits <- gsub("[^0-9]", "", x)
+
+  if (!grepl("^[0-9]{10,11}$", digits)) {
+    return(list(
+      labeler = NA_character_,
+      product = NA_character_,
+      package = NA_character_,
+      raw = raw
+    ))
+  }
+
+  # If 11 digits, assume already normalized 5-4-2
+  if (nchar(digits) == 11L) {
+    return(list(
+      labeler = substr(digits, 1L, 5L),
+      product = substr(digits, 6L, 9L),
+      package = substr(digits, 10L, 11L),
+      raw = raw
+    ))
+  }
+
+  # If 10 digits and not hyphenated, grouping cannot be known reliably
+  list(
+    labeler = NA_character_,
+    product = NA_character_,
+    package = NA_character_,
+    raw = raw
+  )
 }
 
 #' @keywords internal
 #' @noRd
-ndc_to_11 <- function(x) {
-  # Accept 10- or 11-digit strings, or hyphenated 10-digit in FDA forms.
-  x <- trimws(x)
-  # If hyphenated, detect the FDA pattern and pad the correct segment
-  if (grepl("^\\d+-\\d+-\\d+$", x)) {
-    p <- strsplit(x, "-", fixed = TRUE)[[1]]
-    lens <- nchar(p)
-    if (all(lens == c(4,4,2))) {
-      # 4-4-2 -> 5-4-2 (pad labeler)
-      return(paste0(sprintf("%05s", p[1]), p[2], p[3]))
-    } else if (all(lens == c(5,3,2))) {
-      # 5-3-2 -> 5-4-2 (pad product)
-      return(paste0(p[1], sprintf("%04s", p[2]), p[3]))
-    } else if (all(lens == c(5,4,1))) {
-      # 5-4-1 -> 5-4-2 (pad package)
-      return(paste0(p[1], p[2], sprintf("%02s", p[3])))
-    } else if (all(lens == c(5,4,2))) {
-      # already canonical hyphenation; just strip hyphens
-      return(paste0(p, collapse = ""))
+ndc_to_11 <- function(ndc) {
+  stopifnot(is.character(ndc))
+
+  purrr::map_chr(ndc, function(x) {
+    if (is.na(x) || !nzchar(x)) {
+      return(NA_character_)
     }
-  }
-  # Non-hyphenated: strip hyphens and pad 10->11 on the left (fallback)
-  digits <- gsub("-", "", x)
-  if (nchar(digits) == 11) return(digits)
-  if (nchar(digits) == 10)  return(stringr::str_pad(digits, width = 11, side = "left", pad = "0"))
-  digits
+
+    x <- trimws(x)
+
+    # If already an 11-digit NDC, return digits only
+    digits_only <- gsub("[^0-9]", "", x)
+
+    if (nchar(digits_only) == 11 && !grepl("-", x)) {
+      return(digits_only)
+    }
+
+    # Handle hyphenated FDA 10-digit formats
+    parts <- strsplit(x, "-", fixed = TRUE)[[1]]
+
+    if (length(parts) == 3) {
+      parts <- trimws(parts)
+
+      labeler <- parts[[1]]
+      product <- parts[[2]]
+      package <- parts[[3]]
+
+      widths <- nchar(parts)
+
+      # 4-4-2 format: pad labeler to 5 digits
+      if (identical(widths, c(4L, 4L, 2L))) {
+        return(paste0(
+          stringr::str_pad(labeler, width = 5, side = "left", pad = "0"),
+          product,
+          package
+        ))
+      }
+
+      # 5-3-2 format: pad product to 4 digits
+      if (identical(widths, c(5L, 3L, 2L))) {
+        return(paste0(
+          labeler,
+          stringr::str_pad(product, width = 4, side = "left", pad = "0"),
+          package
+        ))
+      }
+
+      # 5-4-1 format: pad package to 2 digits
+      if (identical(widths, c(5L, 4L, 1L))) {
+        return(paste0(
+          labeler,
+          product,
+          stringr::str_pad(package, width = 2, side = "left", pad = "0")
+        ))
+      }
+    }
+
+    # Do not infer 11-digit format from non-hyphenated 10-digit NDCs.
+    # Without hyphens, the original FDA format is ambiguous, e.g.,
+    # 4-4-2, 5-3-2, or 5-4-1?
+    if (nchar(digits_only) == 10L && !grepl("-", x)) {
+      return(NA_character_)
+    }
+
+
+    # Fallback: if removing punctuation gives 11 digits, use that
+    if (nchar(digits_only) == 11) {
+      return(digits_only)
+    }
+
+    NA_character_
+  })
 }
 
 #' @keywords internal
 #' @noRd
 hyphenate_ndc_5_4_2 <- function(ndc) {
-  ndc <- gsub("-", "", ndc)
-  if (!grepl("^[0-9]{11}$", ndc)) return(ndc)
-  paste0(substr(ndc,1,5), "-", substr(ndc,6,9), "-", substr(ndc,10,11))
+  if (!is.character(ndc)) {
+    return(ndc)
+  }
+
+  purrr::map_chr(ndc, function(x) {
+    if (is.na(x)) return(NA_character_)
+
+    digits <- gsub("[^0-9]", "", x)
+
+    if (!grepl("^[0-9]{11}$", digits)) {
+      return(x)
+    }
+
+    paste0(
+      substr(digits, 1L, 5L), "-",
+      substr(digits, 6L, 9L), "-",
+      substr(digits, 10L, 11L)
+    )
+  })
 }
 
