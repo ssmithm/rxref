@@ -10,8 +10,7 @@ two options to get this list.
 
 ## Option 1: Starting with a complete list of drugs
 
-A quick google search will give us the list of GLP1-RA agents currently
-approved for use:
+For this example, we start with a prespecified list of GLP1-RA agents:
 
 - exenatide
 
@@ -37,15 +36,12 @@ TTYs and their description from
 
 ``` r
 
-# remotes::install_github("ssmithm/rxref")
-library(rxref)
 glp1.names <- c("semaglutide", "exenatide", "liraglutide", "lixisenatide", "dulaglutide", "albiglutide", "tirzepatide")
 
 if (run_live) {
-  # run this next line only, if recreating on your own
   glp1.ings <- find_ingredients(glp1.names)
 } else {
-  glp1.ings <- readRDS(system.file("extdata", "glp1_ings.rds", package = "rxref"))
+  glp1.ings <- read_rxref_example("glp1_ings.rds")
 }
 
 glp1.ings
@@ -64,16 +60,30 @@ glp1.ings
 ### Getting Product RxCUIs from Ingredient RxCUIs
 
 Now, let’s look for all of the related RxCUIs using
-`product_for_ingredients()`. Here, we’re going to just focus on the TTYs
-that are likely to have NDCs (SCD, SBD, GPCK, BPCK) by using the
-function’s default TTY.
+[`products_for_ingredients()`](https://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md).
+Here, we’re going to just focus on the TTYs that are likely to have NDCs
+(SCD, SBD, GPCK, BPCK) by using the function’s default TTY.
 
-There are two default TTY lists:
+The default product TTYs are available with
+[`default_product_ttys()`](https://www.stevenmsmith.org/rxref/reference/default_product_ttys.md).
+These include semantic clinical drugs, semantic branded drugs, generic
+packs, and branded packs. A broader set of product-related TTYs is
+available with
+[`extended_product_ttys()`](https://www.stevenmsmith.org/rxref/reference/extended_product_ttys.md)
+or `product_ttys("extended")`. Users can also supply their own character
+vector of TTYs.
 
-- **default** = “SCD”, “SBD”, “GPCK”, “BPCK”
+``` r
 
-- **extended** = “SCD”, “SBD”, “GPCK”, “BPCK”, “SCDC”, “SBDC”, “SCDF”,
-  “SBDF”, “SCDFP”, “SBDFP”, “SCDG”, “SCDGP”, “BN”, “MIN”, “IN”
+default_product_ttys()
+#> [1] "SCD"  "SBD"  "GPCK" "BPCK"
+extended_product_ttys()
+#>  [1] "SCD"   "SBD"   "GPCK"  "BPCK"  "SCDG"  "SBDG"  "SCDF"  "SBDF"  "SBDFP"
+#> [10] "SCDFP" "SCDGP"
+extended_ttys()
+#>  [1] "SCD"   "SBD"   "GPCK"  "BPCK"  "SCDG"  "SBDG"  "SCDF"  "SBDF"  "SBDFP"
+#> [10] "SCDFP" "SCDGP" "SCDC"  "SBDC"  "BN"    "MIN"   "PIN"   "IN"
+```
 
 But, you could supply your own set of TTYs to include instead of using
 these two default lists.
@@ -85,10 +95,9 @@ default option of include_combos = TRUE.
 ``` r
 
 if (run_live) {
-  # run this next line only, if recreating on your own
   glp1.prods <- products_for_ingredients(glp1.ings$rxcui)
 } else {
-  glp1.prods <- readRDS(system.file("extdata", "glp1_prods.rds", package = "rxref"))
+  glp1.prods <- read_rxref_example("glp1_prods.rds")
 }
 
 glp1.prods |> head(30)
@@ -117,10 +126,9 @@ resulting file.
 ``` r
 
 if (run_live) {
-  # run this next line only, if recreating on your own
   glp1.ndc.map <- map_rxcui_to_ndc(unique(glp1.prods$product_rxcui))
 } else {
-  glp1.ndc.map <- readRDS(system.file("extdata", "glp1_ndc_map.rds", package = "rxref"))
+  glp1.ndc.map <- read_rxref_example("glp1_ndc_map.rds")
 }
 
 # Join back names/TTYs and de-dupe
@@ -169,13 +177,13 @@ corresponding NDC.
 
 
 if (run_live) {
-  # run this next line only, if recreating on your own
-  alt.glp1.ndcs <- search_drug(term = glp1.names,
-                               return = "ndc",
-                               ndc_status = c("ACTIVE", "OBSOLETE", "UNSPECIFIED")
-                               )
+  alt.glp1.ndcs <- search_drug(
+    term = glp1.names,
+    return = "ndc",
+    ndc_status = c("ACTIVE", "OBSOLETE", "UNSPECIFIED")
+  )
 } else {
-  alt.glp1.ndcs <- readRDS(system.file("extdata", "alt_glp1_ndc.rds", package = "rxref"))
+  alt.glp1.ndcs <- read_rxref_example("alt_glp1_ndc.rds")
 }
 
 alt.glp1.ndcs1 <- 

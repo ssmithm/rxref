@@ -223,11 +223,10 @@ solutions, while excluding injectable or ophthalmic products.</p>
 <h2 id="map-oral-product-rxcuis-to-active-ndcs">Map oral product RxCUIs to active NDCs<a class="anchor" aria-label="anchor" href="#map-oral-product-rxcuis-to-active-ndcs"></a>
 </h2>
 <p>Once the product list is restricted to oral products, use
-<code>map_products_to_ndcs()</code> to map the product RxCUIs to
-NDCs.</p>
+<code>map_rxcui_to_ndcs()</code> to map the product RxCUIs to NDCs.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="va">bb_oral_ndcs</span> <span class="op">&lt;-</span> <span class="fu">map_products_to_ndcs</span><span class="op">(</span></span>
+<span><span class="va">bb_oral_ndcs</span> <span class="op">&lt;-</span> <span class="fu">map_rxcui_to_ndcs</span><span class="op">(</span></span>
 <span>  <span class="va">bb_oral_products</span>,</span>
 <span>  status <span class="op">=</span> <span class="st">"ACTIVE"</span></span>
 <span><span class="op">)</span></span>

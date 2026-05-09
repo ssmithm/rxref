@@ -171,12 +171,12 @@ solutions, while excluding injectable or ophthalmic products.
 ## Map oral product RxCUIs to active NDCs
 
 Once the product list is restricted to oral products, use
-`map_products_to_ndcs()` to map the product RxCUIs to NDCs.
+`map_rxcui_to_ndcs()` to map the product RxCUIs to NDCs.
 
 ``` r
 
 
-bb_oral_ndcs <- map_products_to_ndcs(
+bb_oral_ndcs <- map_rxcui_to_ndcs(
   bb_oral_products,
   status = "ACTIVE"
 )

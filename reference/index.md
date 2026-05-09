@@ -122,9 +122,7 @@ source-relationship combinations.
 
 ## Package configuration
 
-Configure rxref behavior, including backend settings.
+Configure rxref behavior.
 
 - [`rxref_conf()`](https://www.stevenmsmith.org/rxref/reference/rxref_conf.md)
   : Configure rxref
-- [`set_backend()`](https://www.stevenmsmith.org/rxref/reference/set_backend.md)
-  : Select backend (API-only for now)
