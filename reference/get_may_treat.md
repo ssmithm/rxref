@@ -1,7 +1,7 @@
 # Get indication/treatment assertions from MED-RT
 
 `get_may_treat()` is a convenience wrapper for
-[`get_medrt()`](http://www.stevenmsmith.org/rxref/reference/get_medrt.md)
+[`get_medrt()`](https://www.stevenmsmith.org/rxref/reference/get_medrt.md)
 that returns indications (disease assertions) from MED-RT for RxNorm
 drugs, when available. Note that absence of a row (or an empty table
 altogether) should not necessarily be interpreted as absence of an

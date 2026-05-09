@@ -61,7 +61,7 @@ beta_blocker_names <- c(
 ## Resolve drug names to ingredient RxCUIs
 
 First, use
-[`find_ingredients()`](http://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
+[`find_ingredients()`](https://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
 to resolve each drug name to an RxNorm ingredient concept.
 
 ``` r
@@ -84,7 +84,7 @@ ingredient RxCUIs are the starting point for product expansion.
 ## Expand ingredients to product RxCUIs
 
 Next, use
-[`products_for_ingredients()`](http://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
+[`products_for_ingredients()`](https://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
 to identify product-level RxNorm concepts containing each ingredient.
 
 ``` r
@@ -124,7 +124,7 @@ routes. For example, some beta-blockers have oral tablets, injectable
 products, or ophthalmic solutions.
 
 We can use
-[`get_clinical_attributes()`](http://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md)
+[`get_clinical_attributes()`](https://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md)
 to inspect route information for the product RxCUIs.
 
 ``` r
@@ -144,7 +144,7 @@ outside the intended use case.
 ## Filter to oral products
 
 To keep only orally available products, use
-[`filter_products_by_route()`](http://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md).
+[`filter_products_by_route()`](https://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md).
 
 ``` r
 
@@ -239,7 +239,7 @@ bb_oral_products |>
 ## A shortcut using search_drug()
 
 The same workflow can be run more compactly with
-[`search_drug()`](http://www.stevenmsmith.org/rxref/reference/search_drug.md).
+[`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md).
 
 To return oral product RxCUIs only:
 
@@ -354,14 +354,14 @@ list, with oral beta-blockers as an example, using `rxref`.
 
 The key steps are:
 
-1.  [`find_ingredients()`](http://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
+1.  [`find_ingredients()`](https://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
     to resolve drug names to ingredient RxCUIs;
-2.  [`products_for_ingredients()`](http://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
+2.  [`products_for_ingredients()`](https://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
     to expand ingredients to product RxCUIs;
-3.  [`filter_products_by_route()`](http://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md)
+3.  [`filter_products_by_route()`](https://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md)
     to retain products for the route of interest;
 4.  `map_products_to_ndcs()` to obtain NDCs; OR,
-5.  [`search_drug()`](http://www.stevenmsmith.org/rxref/reference/search_drug.md)
+5.  [`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md)
     for a compact end-to-end workflow.
 
 For drug classes with products available through multiple routes, route

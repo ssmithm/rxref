@@ -1,7 +1,7 @@
 # Get contraindication assertions from MED-RT
 
 `get_contraindications()` is a convenience wrapper for
-[`get_medrt()`](http://www.stevenmsmith.org/rxref/reference/get_medrt.md)
+[`get_medrt()`](https://www.stevenmsmith.org/rxref/reference/get_medrt.md)
 that returns only contraindication MED-RT assertions for RxNorm drugs.
 
 ## Usage

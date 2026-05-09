@@ -1,7 +1,7 @@
 # Filter RxNorm product concepts by route of administration.
 
 Filters a product-level rxref table using route information from
-[`get_clinical_attributes()`](http://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md).
+[`get_clinical_attributes()`](https://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md).
 Useful when a drug or class includes products across multiple routes,
 such as oral tablets, ophthalmic solutions, injectables, patches, or
 topical formulations.
@@ -22,7 +22,7 @@ filter_products_by_route(
 - products:
 
   A tibble containing a `product_rxcui` column, such as the output of
-  [`products_for_ingredients()`](http://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md).
+  [`products_for_ingredients()`](https://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md).
 
 - route:
 

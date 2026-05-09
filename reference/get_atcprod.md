@@ -1,8 +1,8 @@
 # Get ATC product-level classes for RxNorm drugs
 
-[`get_atc()`](http://www.stevenmsmith.org/rxref/reference/get_atc.md) is
-a convenience wrapper for
-[`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md)
+[`get_atc()`](https://www.stevenmsmith.org/rxref/reference/get_atc.md)
+is a convenience wrapper for
+[`get_classes()`](https://www.stevenmsmith.org/rxref/reference/get_classes.md)
 that returns Anatomical Therapeutic Chemical (ATC) product-level class
 assertions for RxNorm drugs.
 

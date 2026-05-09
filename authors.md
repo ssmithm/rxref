@@ -9,13 +9,13 @@
 Source:
 [`inst/CITATION`](https://github.com/ssmithm/rxref/blob/main/inst/CITATION)
 
-Smith S (2026). *rxref: Tidy RxNorm Utilities*. R package version 0.2.3,
+Smith S (2026). *rxref: Tidy RxNorm Utilities*. R package version 0.2.4,
 <https://www.stevenmsmith.org/rxref>.
 
     @Manual{,
       title = {rxref: Tidy RxNorm Utilities},
       author = {Steven Smith},
       year = {2026},
-      note = {R package version 0.2.3},
+      note = {R package version 0.2.4},
       url = {https://www.stevenmsmith.org/rxref},
     }

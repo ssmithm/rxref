@@ -102,103 +102,142 @@ aggregate(
 
 # Package index
 
-## Core verbs
+## Resolve and inspect RxNorm concepts
 
-- [`resolve()`](http://www.stevenmsmith.org/rxref/reference/resolve.md)
+Find RxNorm concepts from drug names or identifiers and retrieve basic
+concept-level metadata.
+
+- [`resolve()`](https://www.stevenmsmith.org/rxref/reference/resolve.md)
   : Resolve free text, RxCUI, or NDC to RxCUI and preferred name
-- [`get_properties()`](http://www.stevenmsmith.org/rxref/reference/get_properties.md)
+- [`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md)
+  : Search free-text drug name and return product CUIs and/or NDCs
+- [`get_properties()`](https://www.stevenmsmith.org/rxref/reference/get_properties.md)
   : Get core RxNorm properties for one or more RxCUIs
-- [`map_to()`](http://www.stevenmsmith.org/rxref/reference/map_to.md)
-  [`map_ndc_to_rxcui()`](http://www.stevenmsmith.org/rxref/reference/map_to.md)
-  [`map_rxcui_to_ndc()`](http://www.stevenmsmith.org/rxref/reference/map_to.md)
-  : Map between NDC and RxCUI in either direction
-- [`ndc_status()`](http://www.stevenmsmith.org/rxref/reference/ndc_status.md)
-  : Get RxNav status for NDCs
 
-## RxNav Search & catalog utilities
+## Build product-level medication lists
 
-- [`find_ingredients()`](http://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
+Start from ingredient names or RxCUIs, then expand to clinical or
+branded drug products suitable for cohort construction, exposure
+definitions, or medication-list development.
+
+- [`find_ingredients()`](https://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
   : Resolve a free-text drug name to ingredient CUIs (IN/PIN)
-- [`ingredients_for_rxcui()`](http://www.stevenmsmith.org/rxref/reference/ingredients_for_rxcui.md)
+- [`ingredients_for_rxcui()`](https://www.stevenmsmith.org/rxref/reference/ingredients_for_rxcui.md)
   : Get ingredient concepts for RxCUIs
-- [`products_for_ingredients()`](http://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
+- [`products_for_ingredients()`](https://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
   : Expand ingredient CUIs to product CUIs that truly contain the
   ingredient
-- [`search_drug()`](http://www.stevenmsmith.org/rxref/reference/search_drug.md)
-  : Search free-text drug name and return product CUIs and/or NDCs
 
-## TTY helper functions
+## Map between RxCUIs and NDCs
 
-- [`tty_catalogue()`](http://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)
-  : Catalogue of RxNorm TTY (Term Types)
-- [`product_ttys()`](http://www.stevenmsmith.org/rxref/reference/product_ttys.md)
-  : RxNorm product term type sets
-- [`default_product_ttys()`](http://www.stevenmsmith.org/rxref/reference/default_product_ttys.md)
-  : Default RxNorm product term types
-- [`extended_product_ttys()`](http://www.stevenmsmith.org/rxref/reference/extended_product_ttys.md)
-  : Extended RxNorm product term types
-- [`extended_ttys()`](http://www.stevenmsmith.org/rxref/reference/extended_ttys.md)
-  : Extended RxNorm term types
+Convert between RxNorm concept identifiers and National Drug Codes,
+including active and historical NDC associations.
 
-## RxClass Search & catalog utilities
+- [`map_to()`](https://www.stevenmsmith.org/rxref/reference/map_to.md) :
+  Map between NDCs and RxCUIs
+- [`map_ndc_to_rxcui()`](https://www.stevenmsmith.org/rxref/reference/map_ndc_to_rxcui.md)
+  : Map NDCs to RxCUIs
+- [`map_rxcui_to_ndc()`](https://www.stevenmsmith.org/rxref/reference/map_rxcui_to_ndc.md)
+  : Map RxCUIs to NDCs
+- [`ndc_status()`](https://www.stevenmsmith.org/rxref/reference/ndc_status.md)
+  : Get RxNav status for NDCs
 
-- [`find_classes()`](http://www.stevenmsmith.org/rxref/reference/find_classes.md)
-  : Find RxClass drug classes by class name
-- [`get_atc()`](http://www.stevenmsmith.org/rxref/reference/get_atc.md)
-  : Get ATC classes for RxNorm drugs
-- [`get_atcprod()`](http://www.stevenmsmith.org/rxref/reference/get_atcprod.md)
-  : Get ATC product-level classes for RxNorm drugs
-- [`get_chemical_structure()`](http://www.stevenmsmith.org/rxref/reference/get_chemical_structure.md)
-  : Get chemical-structure assertions
-- [`get_class_members()`](http://www.stevenmsmith.org/rxref/reference/get_class_members.md)
-  : Get RxNorm members of an RxClass class
-- [`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md)
-  **\[experimental\]** : Get RxClass assertions for RxNorm drugs
-- [`get_contraindications()`](http://www.stevenmsmith.org/rxref/reference/get_contraindications.md)
-  : Get contraindication assertions from MED-RT
-- [`get_drug_classes()`](http://www.stevenmsmith.org/rxref/reference/get_drug_classes.md)
+## Drug classes and therapeutic categories
+
+Retrieve drug class assertions from RxClass and convenience wrappers for
+common class vocabularies such as ATC, EPC, MED-RT, and VA classes.
+
+- [`get_drug_classes()`](https://www.stevenmsmith.org/rxref/reference/get_drug_classes.md)
   **\[experimental\]** : Get class-like RxClass assertions for RxNorm
   drugs
-- [`get_epc()`](http://www.stevenmsmith.org/rxref/reference/get_epc.md)
+- [`get_classes()`](https://www.stevenmsmith.org/rxref/reference/get_classes.md)
+  **\[experimental\]** : Get RxClass assertions for RxNorm drugs
+- [`find_classes()`](https://www.stevenmsmith.org/rxref/reference/find_classes.md)
+  : Find RxClass drug classes by class name
+- [`get_class_members()`](https://www.stevenmsmith.org/rxref/reference/get_class_members.md)
+  : Get RxNorm members of an RxClass class
+- [`get_atc()`](https://www.stevenmsmith.org/rxref/reference/get_atc.md)
+  : Get ATC classes for RxNorm drugs
+- [`get_atcprod()`](https://www.stevenmsmith.org/rxref/reference/get_atcprod.md)
+  : Get ATC product-level classes for RxNorm drugs
+- [`get_epc()`](https://www.stevenmsmith.org/rxref/reference/get_epc.md)
   : Get FDA/SPL established pharmacologic classes
-- [`get_may_treat()`](http://www.stevenmsmith.org/rxref/reference/get_may_treat.md)
-  : Get indication/treatment assertions from MED-RT
-- [`get_medrt()`](http://www.stevenmsmith.org/rxref/reference/get_medrt.md)
-  : Get MED-RT assertions for RxNorm drugs
-- [`get_medrt_moa()`](http://www.stevenmsmith.org/rxref/reference/get_medrt_moa.md)
-  : Get MED-RT mechanism-of-action assertions
-- [`get_medrt_pe()`](http://www.stevenmsmith.org/rxref/reference/get_medrt_pe.md)
-  : Get MED-RT physiologic-effect assertions
-- [`get_va()`](http://www.stevenmsmith.org/rxref/reference/get_va.md) :
+- [`get_va()`](https://www.stevenmsmith.org/rxref/reference/get_va.md) :
   Get VA drug classes for RxNorm drugs
-- [`rxclass_rela_sources()`](http://www.stevenmsmith.org/rxref/reference/rxclass_rela_sources.md)
-  : Get RxClass relationship sources
-- [`rxclass_relas()`](http://www.stevenmsmith.org/rxref/reference/rxclass_relas.md)
-  : Get RxClass relationship types
-- [`rxclass_relationships()`](http://www.stevenmsmith.org/rxref/reference/rxclass_relationships.md)
-  : Summarize RxClass relationship types for drugs
 
-## Clinical utilities
+## Specialized RxClass relationships
 
-- [`get_clinical_attributes()`](http://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md)
+Retrieve selected RxClass relationship types such as mechanisms of
+action, physiologic effects, indications, contraindications, and
+chemical structure.
+
+- [`get_medrt()`](https://www.stevenmsmith.org/rxref/reference/get_medrt.md)
+  : Get MED-RT assertions for RxNorm drugs
+- [`get_medrt_moa()`](https://www.stevenmsmith.org/rxref/reference/get_medrt_moa.md)
+  : Get MED-RT mechanism-of-action assertions
+- [`get_medrt_pe()`](https://www.stevenmsmith.org/rxref/reference/get_medrt_pe.md)
+  : Get MED-RT physiologic-effect assertions
+- [`get_may_treat()`](https://www.stevenmsmith.org/rxref/reference/get_may_treat.md)
+  : Get indication/treatment assertions from MED-RT
+- [`get_contraindications()`](https://www.stevenmsmith.org/rxref/reference/get_contraindications.md)
+  : Get contraindication assertions from MED-RT
+- [`get_chemical_structure()`](https://www.stevenmsmith.org/rxref/reference/get_chemical_structure.md)
+  : Get chemical-structure assertions
+
+## Clinical attribute utilities
+
+Derive clinically useful product attributes, including ingredients,
+strength, dose form, route, and route-specific product filtering.
+
+- [`get_clinical_attributes()`](https://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md)
   : Clinical attributes from the concept (SCD/SBD) or related SCD/SBD
-- [`filter_products_by_route()`](http://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md)
+- [`filter_products_by_route()`](https://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md)
   : Filter RxNorm product concepts by route of administration.
 
-## Configurations
+## Concept type helpers
 
-- [`set_backend()`](http://www.stevenmsmith.org/rxref/reference/set_backend.md)
-  : Select backend (API-only for now)
-- [`rxref_conf()`](http://www.stevenmsmith.org/rxref/reference/rxref_conf.md)
+Helpers for working with RxNorm term types, including default and
+extended product-level term type sets.
+
+- [`tty_catalogue()`](https://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)
+  : Catalogue of RxNorm TTY (Term Types)
+- [`product_ttys()`](https://www.stevenmsmith.org/rxref/reference/product_ttys.md)
+  : RxNorm product term type sets
+- [`default_product_ttys()`](https://www.stevenmsmith.org/rxref/reference/default_product_ttys.md)
+  : Default RxNorm product term types
+- [`extended_product_ttys()`](https://www.stevenmsmith.org/rxref/reference/extended_product_ttys.md)
+  : Extended RxNorm product term types
+- [`extended_ttys()`](https://www.stevenmsmith.org/rxref/reference/extended_ttys.md)
+  : Extended RxNorm term types
+
+## RxClass metadata
+
+Inspect available RxClass relationship sources, relationship names, and
+source-relationship combinations.
+
+- [`rxclass_rela_sources()`](https://www.stevenmsmith.org/rxref/reference/rxclass_rela_sources.md)
+  : Get RxClass relationship sources
+- [`rxclass_relas()`](https://www.stevenmsmith.org/rxref/reference/rxclass_relas.md)
+  : Get RxClass relationship types
+- [`rxclass_relationships()`](https://www.stevenmsmith.org/rxref/reference/rxclass_relationships.md)
+  : Summarize RxClass relationship types for drugs
+
+## Package configuration
+
+Configure rxref behavior, including backend settings.
+
+- [`rxref_conf()`](https://www.stevenmsmith.org/rxref/reference/rxref_conf.md)
   : Configure rxref
+- [`set_backend()`](https://www.stevenmsmith.org/rxref/reference/set_backend.md)
+  : Select backend (API-only for now)
 
 # Articles
 
 ### All vignettes
 
 - [Case Study: GLP1 receptor
-  agonists](http://www.stevenmsmith.org/rxref/articles/case_study_glp1ra.md):
+  agonists](https://www.stevenmsmith.org/rxref/articles/case_study_glp1ra.md):
 - [Building route-specific RxCUI and NDC
-  lists](http://www.stevenmsmith.org/rxref/articles/route_specific_lists.md):
+  lists](https://www.stevenmsmith.org/rxref/articles/route_specific_lists.md):
 - [rxref: Getting
-  started](http://www.stevenmsmith.org/rxref/articles/rxref_intro.md):
+  started](https://www.stevenmsmith.org/rxref/articles/rxref_intro.md):

@@ -1,13 +1,13 @@
 # rxref: Tidy RxNorm utilities
 
 Core exported verbs:
-[`resolve()`](http://www.stevenmsmith.org/rxref/reference/resolve.md),
-[`get_properties()`](http://www.stevenmsmith.org/rxref/reference/get_properties.md),
-[`map_to()`](http://www.stevenmsmith.org/rxref/reference/map_to.md).
+[`resolve()`](https://www.stevenmsmith.org/rxref/reference/resolve.md),
+[`get_properties()`](https://www.stevenmsmith.org/rxref/reference/get_properties.md),
+[`map_to()`](https://www.stevenmsmith.org/rxref/reference/map_to.md).
 Configure behavior with
-[`rxref_conf()`](http://www.stevenmsmith.org/rxref/reference/rxref_conf.md)
+[`rxref_conf()`](https://www.stevenmsmith.org/rxref/reference/rxref_conf.md)
 and
-[`set_backend()`](http://www.stevenmsmith.org/rxref/reference/set_backend.md).
+[`set_backend()`](https://www.stevenmsmith.org/rxref/reference/set_backend.md).
 
 ## See also
 

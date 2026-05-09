@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">rxref</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -178,7 +178,7 @@ resulting file.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="co"># run this next line only, if recreating on your own</span></span>
-<span>  <span class="va">glp1.ndc.map</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_to.html">map_rxcui_to_ndc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">glp1.prods</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">glp1.ndc.map</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">glp1.prods</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
 <span>  <span class="va">glp1.ndc.map</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"glp1_ndc_map.rds"</span>, package <span class="op">=</span> <span class="st">"rxref"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>

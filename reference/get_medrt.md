@@ -1,7 +1,7 @@
 # Get MED-RT assertions for RxNorm drugs
 
 `get_medrt()` is a convenience wrapper for
-[`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md)
+[`get_classes()`](https://www.stevenmsmith.org/rxref/reference/get_classes.md)
 that returns MED-RT assertions for RxNorm drugs. These include, for
 example, asserted mechanisms of action, contraindications, physiologic
 effects (including adverse side effects), etc.

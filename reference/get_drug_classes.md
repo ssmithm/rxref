@@ -19,10 +19,10 @@ This function is experimental because "drug class" is not a single
 native RxClass concept. Different sources use different classification
 logic, and this helper applies an opinionated filter to return
 class-like assertions. For source-specific results, use
-[`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md),
-[`get_atc()`](http://www.stevenmsmith.org/rxref/reference/get_atc.md),
-[`get_epc()`](http://www.stevenmsmith.org/rxref/reference/get_epc.md),
-[`get_va()`](http://www.stevenmsmith.org/rxref/reference/get_va.md), or
+[`get_classes()`](https://www.stevenmsmith.org/rxref/reference/get_classes.md),
+[`get_atc()`](https://www.stevenmsmith.org/rxref/reference/get_atc.md),
+[`get_epc()`](https://www.stevenmsmith.org/rxref/reference/get_epc.md),
+[`get_va()`](https://www.stevenmsmith.org/rxref/reference/get_va.md), or
 related functions directly.
 
 ## Usage

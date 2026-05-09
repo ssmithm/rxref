@@ -3,7 +3,7 @@
 `rxclass_relationships()` is a diagnostic helper that evaluates the
 type(s) of relationship (rela) asserted in RxNorm MED-RT data and the
 number within each relationship asserted. In some cases,
-[`get_medrt()`](http://www.stevenmsmith.org/rxref/reference/get_medrt.md)
+[`get_medrt()`](https://www.stevenmsmith.org/rxref/reference/get_medrt.md)
 or its various convenience wrappers may return empty or
 shorter-than-expected tibbles because some relationships expected by the
 user are not asserted in RxNorm (for example, an MOA may not be asserted

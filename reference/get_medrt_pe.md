@@ -1,7 +1,7 @@
 # Get MED-RT physiologic-effect assertions
 
 `get_medrt_pe()` is a convenience wrapper for
-[`get_medrt()`](http://www.stevenmsmith.org/rxref/reference/get_medrt.md)
+[`get_medrt()`](https://www.stevenmsmith.org/rxref/reference/get_medrt.md)
 that returns only physiologic effect MED-RT assertions for RxNorm drugs.
 
 ## Usage

@@ -40,7 +40,7 @@ search_drug(
   Character vector of TTYs to include in product search. Defaults to
   `.rxref_default_ttys`. Other prespecified option is
   `.rxref_extended_ttys` or a character vector of explicit TTYs. Run
-  [`tty_catalogue()`](http://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)
+  [`tty_catalogue()`](https://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)
   to review options.
 
 - route:
@@ -58,7 +58,7 @@ search_drug(
 - ...:
 
   Passed to
-  [`products_for_ingredients()`](http://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
+  [`products_for_ingredients()`](https://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
   (e.g., include_combos = FALSE)
 
 ## Value

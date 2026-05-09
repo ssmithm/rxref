@@ -1,7 +1,7 @@
 # Get VA drug classes for RxNorm drugs
 
 `get_va()` is a convenience wrapper for
-[`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md)
+[`get_classes()`](https://www.stevenmsmith.org/rxref/reference/get_classes.md)
 that returns VA drug class assertions for RxNorm drugs.
 
 ## Usage

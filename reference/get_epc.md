@@ -1,7 +1,7 @@
 # Get FDA/SPL established pharmacologic classes
 
 `get_epc()` is a convenience wrapper for
-[`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md)
+[`get_classes()`](https://www.stevenmsmith.org/rxref/reference/get_classes.md)
 that returns FDA labeling class assertions for RxNorm drugs.
 
 ## Usage

@@ -33,7 +33,7 @@ products_for_ingredients(
 
   Optional character vector of routes to retain. If `NULL`, no route
   filtering is performed. Route filtering uses
-  [`get_clinical_attributes()`](http://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md).
+  [`get_clinical_attributes()`](https://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md).
   Note that route is intended for product-level TTYs (see
   `.rxref_default_ttys`) and may not filter well on other TTYs such as
   those in `.rxref_extended_ttys`.

@@ -1,7 +1,7 @@
 # Get ATC classes for RxNorm drugs
 
 `get_atc()` is a convenience wrapper for
-[`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md)
+[`get_classes()`](https://www.stevenmsmith.org/rxref/reference/get_classes.md)
 that returns Anatomical Therapeutic Chemical (ATC) class assertions for
 RxNorm drugs.
 

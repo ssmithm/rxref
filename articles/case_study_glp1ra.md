@@ -30,10 +30,10 @@ approved for use:
 ### Identifying Ingredient RxCUIs
 
 Let’s turn this into a character vector and use
-[`find_ingredients()`](http://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
+[`find_ingredients()`](https://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
 to gather RxCUIs for TTY = ‘IN’ (note: you can get a complete list of
 TTYs and their description from
-[`tty_catalogue()`](http://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)).
+[`tty_catalogue()`](https://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)).
 
 ``` r
 
@@ -159,7 +159,7 @@ against the prescribing data or pharmacy claims data.
 
 This same goal can be accomplished all in one step, if you prefer, using
 the
-[`search_drug()`](http://www.stevenmsmith.org/rxref/reference/search_drug.md)
+[`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md)
 function. Suppose we want to just get NDCs, and we want to make sure
 we’re capturing *active*, as well as *obsolete* or *unspecified* NDCs.
 That is, we don’t actually care about the RxCUIs that don’t have a

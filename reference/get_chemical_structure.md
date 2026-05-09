@@ -1,7 +1,7 @@
 # Get chemical-structure assertions
 
 `get_chemical_structure()` is a convenience wrapper for
-[`get_classes()`](http://www.stevenmsmith.org/rxref/reference/get_classes.md)
+[`get_classes()`](https://www.stevenmsmith.org/rxref/reference/get_classes.md)
 that returns chemical-structure assertions for RxNorm drugs.
 
 ## Usage
