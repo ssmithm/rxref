@@ -42,5 +42,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Steven Smith \email{ssmith@cop.ufl.edu}
 
+Authors:
+\itemize{
+  \item Steven Smith \email{ssmith@cop.ufl.edu}
+}
+
 }
 \keyword{internal}

@@ -1,10 +1,10 @@
 citHeader("To cite rxref in publications, use:")
 
-citEntry(
-  entry    = "Manual",
-  title    = "rxref: Tidy RxNorm Utilities",
-  author   = person("Steven", "Smith"),
-  year     = "2026",
-  note     = "R package version 0.2.4",
-  url      = "https://www.stevenmsmith.org/rxref"
+bibentry(
+  bibtype = "Manual",
+  title = "rxref: Tidy Utilities for RxNorm and NDC Resolution",
+  author = person("Steven", "Smith"),
+  year = "2026",
+  note = "R package version 0.2.4",
+  url = "https://www.stevenmsmith.org/rxref/"
 )
