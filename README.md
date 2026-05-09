@@ -20,13 +20,12 @@ research in the [UF CVmedLab](https://cvmedlab.org/), where we often
 need to identify medication prescriptions or pharmacy dispensings as a
 proxy for medication exposure or outcomes.
 
-The core use case for **rxref** is identifying a set of RxCUIs (Rx
-Concept Unique Identifiers) and/or NDCs (national drug codes) that
-relate to a single medication or set of medications (i.e., a class of
-medications) supplied by the user. Additional functionality (still in
-early stage development) will include extracting additional properties
-(e.g., strength, dosage form, indications, adverse events, and so on)
-related to a user-supplied list of RxCUIs.
+The core use case for **rxref** is identifying RxCUIs and NDCs related
+to user-supplied medications or medication classes. The package also
+includes helpers for retrieving RxNorm properties, mapping between
+RxCUIs and NDCs, identifying ingredient concepts, filtering products by
+route, querying selected RxClass relationships, and working with common
+RxNorm term type sets.
 
 ## Installation
 
@@ -49,9 +48,9 @@ lisinopril.ing <- find_ingredients('lisinopril')
 lisinopril.ing |> knitr::kable()
 ```
 
-| input      | rxcui | name       | tty |   score |
-|:-----------|:------|:-----------|:----|--------:|
-| lisinopril | 29046 | lisinopril | IN  | 11.9192 |
+| input      | rxcui | name       | tty |    score |
+|:-----------|:------|:-----------|:----|---------:|
+| lisinopril | 29046 | lisinopril | IN  | 11.94845 |
 
 ``` r
 

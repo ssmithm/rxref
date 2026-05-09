@@ -6,14 +6,35 @@
 \alias{rxref-package}
 \title{rxref: Tidy RxNorm utilities}
 \description{
-Core exported verbs: \code{\link[=resolve]{resolve()}}, \code{\link[=get_properties]{get_properties()}}, \code{\link[=map_to]{map_to()}}.
-Configure behavior with \code{\link[=rxref_conf]{rxref_conf()}} and \code{\link[=set_backend]{set_backend()}}.
+\code{rxref} provides tidy, API-first tools for working with RxNorm and RxClass
+data in R. The package helps users resolve drug names and identifiers,
+inspect RxNorm concepts, map between RxCUIs and NDCs, expand ingredients to
+product-level concepts, retrieve drug class information, and derive clinically
+useful product attributes.
+}
+\details{
+Common workflows include:
+\itemize{
+\item Resolving drug names or identifiers with \code{\link[=resolve]{resolve()}} and \code{\link[=search_drug]{search_drug()}}.
+\item Retrieving concept metadata with \code{\link[=get_properties]{get_properties()}}.
+\item Building product-level medication lists with \code{\link[=find_ingredients]{find_ingredients()}},
+\code{\link[=ingredients_for_rxcui]{ingredients_for_rxcui()}}, and \code{\link[=products_for_ingredients]{products_for_ingredients()}}.
+\item Mapping between RxCUIs and NDCs with \code{\link[=map_to]{map_to()}},
+\code{\link[=map_ndc_to_rxcui]{map_ndc_to_rxcui()}}, and \code{\link[=map_rxcui_to_ndc]{map_rxcui_to_ndc()}}.
+\item Retrieving therapeutic class information with \code{\link[=get_classes]{get_classes()}},
+\code{\link[=find_classes]{find_classes()}}, \code{\link[=get_class_members]{get_class_members()}}, \code{\link[=get_atc]{get_atc()}}, \code{\link[=get_epc]{get_epc()}},
+and \code{\link[=get_va]{get_va()}}.
+\item Deriving clinical product attributes with \code{\link[=get_clinical_attributes]{get_clinical_attributes()}} and
+\code{\link[=filter_products_by_route]{filter_products_by_route()}}.
+}
+
+Configure package behavior with \code{\link[=rxref_conf]{rxref_conf()}}.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/ssmithm/rxref}
-  \item \url{http://www.stevenmsmith.org/rxref/}
+  \item \url{https://www.stevenmsmith.org/rxref/}
   \item Report bugs at \url{https://github.com/ssmithm/rxref/issues}
 }
 

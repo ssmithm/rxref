@@ -16,8 +16,3 @@ test_that("rxref_conf sets and returns options", {
   expect_equal(out$rate_delay, 0.1)
   expect_null(out$cache)
 })
-
-test_that("set_backend only accepts api", {
-  expect_equal(set_backend("api"), "api")
-  expect_error(set_backend("local"))
-})

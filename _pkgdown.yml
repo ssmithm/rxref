@@ -104,7 +104,6 @@ reference:
 
 - title: "Package configuration"
   desc: >
-    Configure rxref behavior, including backend settings.
+    Configure rxref behavior.
   contents:
   - rxref_conf
-  - set_backend

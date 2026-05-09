@@ -17,14 +17,3 @@ rxref_conf <- function(base_url = getOption("rxref.base_url"),
     cache = getOption("rxref.cache")
   )
 }
-
-
-#' Select backend (API-only for now)
-#'
-#' @param backend Character scalar; only "api" is currently supported.
-#' @export
-set_backend <- function(backend = c("api")) {
-  backend <- match.arg(backend)
-  options(rxref.backend = backend)
-  invisible(backend)
-}
