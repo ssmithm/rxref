@@ -1,70 +1,110 @@
-url: http://www.stevenmsmith.org/rxref/
+url: https://www.stevenmsmith.org/rxref/
+
 template:
   bootstrap: 5
 
 navbar:
   structure:
     left: [reference, articles, news]
+
   components:
     articles:
       text: Articles
       menu:
-        - text: "rxref: Getting Started"
-          href: articles/rxref_intro.html
-        - text: "Case study: GLP-1 receptor agonists"
-          href: articles/case_study_glp1ra.html
-        - text: "Building route-specific RxCUI and NDC lists"
-          href: articles/route_specific_lists.html
+      - text: "rxref: Getting Started"
+        href: articles/rxref_intro.html
+      - text: "Case study: GLP-1 receptor agonists"
+        href: articles/case_study_glp1ra.html
+      - text: "Building route-specific RxCUI and NDC lists"
+        href: articles/route_specific_lists.html
 
 reference:
-  - title: "Core verbs"
-    contents:
-      - resolve
-      - get_properties
-      - map_to
-      - ndc_status
+- title: "Resolve and inspect RxNorm concepts"
+  desc: >
+    Find RxNorm concepts from drug names or identifiers and retrieve basic
+    concept-level metadata.
+  contents:
+  - resolve
+  - search_drug
+  - get_properties
 
-  - title: "RxNav Search & catalog utilities"
-    contents:
-      - find_ingredients
-      - ingredients_for_rxcui
-      - products_for_ingredients
-      - search_drug
+- title: "Build product-level medication lists"
+  desc: >
+    Start from ingredient names or RxCUIs, then expand to clinical or branded
+    drug products suitable for cohort construction, exposure definitions, or
+    medication-list development.
+  contents:
+  - find_ingredients
+  - ingredients_for_rxcui
+  - products_for_ingredients
 
-  - title: "TTY helper functions"
-    contents:
-      - tty_catalogue
-      - product_ttys
-      - default_product_ttys
-      - extended_product_ttys
-      - extended_ttys
+- title: "Map between RxCUIs and NDCs"
+  desc: >
+    Convert between RxNorm concept identifiers and National Drug Codes,
+    including active and historical NDC associations.
+  contents:
+  - map_to
+  - map_ndc_to_rxcui
+  - map_rxcui_to_ndc
+  - ndc_status
 
-  - title: "RxClass Search & catalog utilities"
-    contents:
-      - find_classes
-      - get_atc
-      - get_atcprod
-      - get_chemical_structure
-      - get_class_members
-      - get_classes
-      - get_contraindications
-      - get_drug_classes
-      - get_epc
-      - get_may_treat
-      - get_medrt
-      - get_medrt_moa
-      - get_medrt_pe
-      - get_va
-      - rxclass_rela_sources
-      - rxclass_relas
-      - rxclass_relationships
+- title: "Drug classes and therapeutic categories"
+  desc: >
+    Retrieve drug class assertions from RxClass and convenience wrappers for
+    common class vocabularies such as ATC, EPC, MED-RT, and VA classes.
+  contents:
+  - get_drug_classes
+  - get_classes
+  - find_classes
+  - get_class_members
+  - get_atc
+  - get_atcprod
+  - get_epc
+  - get_va
 
-  - title: "Clinical utilities"
-    contents:
-      - get_clinical_attributes
-      - filter_products_by_route
+- title: "Specialized RxClass relationships"
+  desc: >
+    Retrieve selected RxClass relationship types such as mechanisms of action,
+    physiologic effects, indications, contraindications, and chemical structure.
+  contents:
+  - get_medrt
+  - get_medrt_moa
+  - get_medrt_pe
+  - get_may_treat
+  - get_contraindications
+  - get_chemical_structure
 
-  - title: "Configurations"
-    contents:
-      - set_backend
-      - rxref_conf
+- title: "Clinical attribute utilities"
+  desc: >
+    Derive clinically useful product attributes, including ingredients, strength,
+    dose form, route, and route-specific product filtering.
+  contents:
+  - get_clinical_attributes
+  - filter_products_by_route
+
+- title: "Concept type helpers"
+  desc: >
+    Helpers for working with RxNorm term types, including default and extended
+    product-level term type sets.
+  contents:
+  - tty_catalogue
+  - product_ttys
+  - default_product_ttys
+  - extended_product_ttys
+  - extended_ttys
+
+- title: "RxClass metadata"
+  desc: >
+    Inspect available RxClass relationship sources, relationship names, and
+    source-relationship combinations.
+  contents:
+  - rxclass_rela_sources
+  - rxclass_relas
+  - rxclass_relationships
+
+- title: "Package configuration"
+  desc: >
+    Configure rxref behavior, including backend settings.
+  contents:
+  - rxref_conf
+  - set_backend
