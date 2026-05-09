@@ -1,5 +1,7 @@
 # Changelog
 
+## rxref 0.3.0
+
 ## rxref 0.2.4
 
 - Removed the experimental `set_backend()` helper. rxref currently uses
