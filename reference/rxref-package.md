@@ -60,3 +60,7 @@ Useful links:
 ## Author
 
 **Maintainer**: Steven Smith <ssmith@cop.ufl.edu>
+
+Authors:
+
+- Steven Smith <ssmith@cop.ufl.edu>
