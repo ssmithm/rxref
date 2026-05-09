@@ -9,7 +9,7 @@ Authors@R:
 	role = c("aut", "cre")))
 Description: A tidy, vectorized R interface to the RxNorm / RxNav API for resolving free-text drug strings, RxCUIs, and NDCs, retrieving core drug properties, and mapping identifiers in both directions.
 License: MIT + file LICENSE
-URL: https://github.com/ssmithm/rxref, http://www.stevenmsmith.org/rxref/
+URL: https://github.com/ssmithm/rxref, https://www.stevenmsmith.org/rxref/
 BugReports: https://github.com/ssmithm/rxref/issues
 Depends:
 	R (>= 4.1)
