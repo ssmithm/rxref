@@ -45,13 +45,27 @@ rx_perform_json <- function(req, service = "RxNav") {
     error = function(e) {
       status <- httr2::resp_status(resp)
 
+      if (identical(status, 429L)) {
+        cli::cli_abort(
+          c(
+            "The {service} API returned HTTP 429: too many requests.",
+            "i" = "You may be exceeding the RxNorm API request limit.",
+            "i" = "Try increasing the delay between API calls, for example: {.code rxref_conf(rate_delay = 0.1)}.",
+            "i" = "If you are running many repeated queries, consider using cached results or batching inputs where possible."
+          ),
+          class = "rxref_api_rate_limit_error",
+          parent = e
+        )
+      }
+
       cli::cli_abort(
         c(
           "The {service} API returned an unsuccessful response.",
           "i" = "HTTP status: {status}.",
           "i" = "Original error: {conditionMessage(e)}"
         ),
-        class = "rxref_api_error"
+        class = "rxref_api_error",
+        parent = e
       )
     }
   )
@@ -85,8 +99,6 @@ rx_perform_json <- function(req, service = "RxNav") {
 }
 
 
-#' @keywords internal
-#' @noRd
 #' @keywords internal
 #' @noRd
 rx_get_json <- (function() {
@@ -175,8 +187,6 @@ rxclass_get_json <- (function() {
 
   mem_fun
 })()
-
-
 
 #' @keywords internal
 #' @noRd
@@ -382,3 +392,18 @@ hyphenate_ndc_5_4_2 <- function(ndc) {
   })
 }
 
+#' @keywords internal
+#' @noRd
+rx_perform <- function(req) {
+  tryCatch(
+    httr2::req_perform(req),
+    httr2_http_429 = function(cnd) {
+      cli::cli_abort(c(
+        "RxNorm returned HTTP 429: too many requests.",
+        "i" = "You may be exceeding NLM's recommended limit of 20 requests per second per IP address.",
+        "i" = "Try increasing the request delay, for example: {.code rxref_conf(rate_delay = 0.1)}.",
+        "i" = "If you are making many repeated calls, consider relying on caching or batching inputs where possible."
+      ), parent = cnd)
+    }
+  )
+}

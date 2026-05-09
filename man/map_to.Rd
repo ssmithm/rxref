@@ -2,32 +2,110 @@
 % Please edit documentation in R/map.R
 \name{map_to}
 \alias{map_to}
-\alias{map_ndc_to_rxcui}
-\alias{map_rxcui_to_ndc}
-\title{Map between NDC and RxCUI in either direction}
+\title{Map between NDCs and RxCUIs}
 \usage{
-map_to(x, to = c("rxcui", "ndc"), status = NULL, show_progress = interactive())
-
-map_ndc_to_rxcui(x, show_progress = interactive())
-
-map_rxcui_to_ndc(x, status = NULL, show_progress = interactive())
+map_to(
+  x,
+  to = c("rxcui", "ndc"),
+  status = NULL,
+  history = NULL,
+  show_progress = interactive()
+)
 }
 \arguments{
-\item{x}{Character vector of NDCs (10/11-digit or hyphenated) or RxCUIs.}
+\item{x}{Character vector of NDCs or RxCUIs.}
 
-\item{to}{One of c("rxcui","ndc") indicating desired output id.}
+\item{to}{Direction of mapping. One of \code{"rxcui"} or \code{"ndc"}.
+Use \code{"rxcui"} to map NDCs to RxCUIs and \code{"ndc"} to map RxCUIs to NDCs.}
 
-\item{status}{For \code{to = "ndc"}, filter by NDC status, e.g., "ACTIVE".
-Use NULL for all.}
+\item{status}{For \code{to = "ndc"} only, optional character vector of NDC
+statuses to retain, such as \code{"ACTIVE"}, \code{"OBSOLETE"}, \code{"ALIEN"}, or
+\code{"UNKNOWN"}. If \code{NULL}, no status-based filtering is applied to the
+retrieved NDCs. Note that when \code{history = "active"}, RxNorm's active NDC
+endpoint is used, so returned NDCs are expected to be active even when
+\code{status = NULL}.}
 
-\item{show_progress}{Logical. Show a progress bar in interactive sessions.
-Progress is shown only when at least 5 inputs are supplied.}
+\item{history}{For \code{to = "ndc"} only, the NDC association history to
+retrieve. One of \code{"active"}, \code{"direct"}, or \code{"all"}.
+\itemize{
+\item \code{"active"} retrieves currently active NDCs associated with the supplied
+RxCUI.
+\item \code{"direct"} retrieves NDCs ever directly associated with the supplied
+RxCUI.
+\item \code{"all"} retrieves NDCs ever directly or indirectly associated with the
+supplied RxCUI, including associations through remapped or archived
+concepts.
+}
+
+If \code{NULL} and \code{to = "ndc"}, defaults to \code{"active"}. Ignored when
+\code{to = "rxcui"}.}
+
+\item{show_progress}{Logical; if \code{TRUE}, show a progress bar for vectorized
+mapping operations. Defaults to \code{interactive()}.}
 }
 \value{
-tibble with columns depending on direction.
+A tibble.
+
+For \code{to = "rxcui"}, returns one row per input NDC/RxCUI mapping with columns:
+\describe{
+\item{input}{Original input NDC.}
+\item{ndc11}{Normalized 11-digit NDC.}
+\item{rxcui}{Mapped RxCUI, if found.}
+}
+
+For \code{to = "ndc"} and \code{history = "active"}, returns one row per RxCUI/NDC
+mapping with columns:
+\describe{
+\item{rxcui}{Input RxCUI.}
+\item{ndc11}{Mapped NDC.}
+\item{ndc_status}{NDC status returned by RxNorm, when available.}
+}
+
+For \code{to = "ndc"} and \code{history} equal to \code{"direct"} or \code{"all"}, the output
+may also include:
+\describe{
+\item{related_rxcui}{RxCUI associated with the historical NDC record. This
+may differ from the input RxCUI when historical or indirect associations
+are retrieved.}
+\item{ndc_start_date}{Start date of the NDC association, when available.}
+\item{ndc_end_date}{End date of the NDC association, when available.}
+}
 }
 \description{
-Map between NDC and RxCUI in either direction
+\code{map_to()} maps identifiers between National Drug Codes (NDCs) and RxNorm
+Concept Unique Identifiers (RxCUIs).
+}
+\details{
+When mapping from NDC to RxCUI, NDCs may be supplied as 10-digit,
+11-digit, or hyphenated values. Input NDCs are normalized to 11-digit
+format before querying RxNorm.
 
-Convenience wrappers
+When mapping from RxCUI to NDC, the \code{history} argument controls whether
+only currently active NDCs are retrieved or whether historical NDC
+associations are also included.
+
+RxNorm distinguishes between currently active NDCs and historical NDC
+associations. The default behavior, \code{history = "active"}, uses RxNorm's
+active NDC endpoint and preserves the earlier behavior of \code{map_to()}.
+
+To retrieve obsolete, discontinued, or otherwise historical NDCs, use
+\code{history = "direct"} or \code{history = "all"}. Setting \code{status = NULL} does not
+by itself request historical NDCs; it only means that no status filter is
+applied after NDCs are retrieved.
+}
+\examples{
+\dontrun{
+# Map an NDC to RxCUI
+map_to("00093-7424-56", to = "rxcui")
+
+# Map an RxCUI to currently active NDCs
+map_to("1049630", to = "ndc")
+
+# Map an RxCUI to all directly associated historical NDCs
+map_to("1049630", to = "ndc", history = "direct")
+
+# Map an RxCUI to all historical NDCs and retain obsolete NDCs only
+map_to("1049630", to = "ndc", history = "all", status = "OBSOLETE")
+}
+
 }
