@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/ssmithm/rxref/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/ssmithm/rxref/blob/v0.3.0/inst/CITATION)
 
 Smith S (2026). *rxref: Tidy Utilities for RxNorm and NDC Resolution*. R
 package version 0.3.0, <https://www.stevenmsmith.org/rxref/>.
