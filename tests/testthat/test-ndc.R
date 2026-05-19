@@ -72,3 +72,24 @@ test_that("hyphenate_ndc_5_4_2 is vectorized and preserves invalid inputs", {
     c("00002-0800-01", "not-an-ndc", NA_character_)
   )
 })
+
+test_that("resolve() handles invalid NDCs without API calls", {
+  out <- resolve("not-an-ndc", type = "ndc")
+
+  expect_s3_class(out, "tbl_df")
+  expect_equal(out$input, "not-an-ndc")
+  expect_equal(out$type, "ndc")
+  expect_true(is.na(out$ndc11))
+  expect_true(is.na(out$rxcui))
+  expect_true(is.na(out$name))
+  expect_true(is.na(out$tty))
+})
+
+test_that("map_to() handles invalid NDCs without API calls", {
+  out <- map_to("not-an-ndc", to = "rxcui")
+
+  expect_s3_class(out, "tbl_df")
+  expect_equal(out$input, "not-an-ndc")
+  expect_true(is.na(out$ndc11))
+  expect_true(is.na(out$rxcui))
+})

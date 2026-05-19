@@ -244,7 +244,7 @@ test_that("find_ingredients() excludes PIN concepts when include_pin = FALSE", {
 })
 
 
-test_that("find_ingredients() returns NA row when no candidates are found", {
+test_that("find_ingredients() returns empty tibble when no candidates are found", {
   fake_rx_get_json <- function(path, query = list()) {
     if (path == "/approximateTerm") {
       return(list(
@@ -265,12 +265,8 @@ test_that("find_ingredients() returns NA row when no candidates are found", {
   out <- find_ingredients("definitely not a drug")
 
   expect_s3_class(out, "tbl_df")
-  expect_equal(nrow(out), 1)
-  expect_equal(out$input, "definitely not a drug")
-  expect_true(is.na(out$rxcui))
-  expect_true(is.na(out$name))
-  expect_true(is.na(out$tty))
-  expect_true(is.na(out$score))
+  expect_equal(nrow(out), 0L)
+  expect_named(out, c("input", "rxcui", "name", "tty", "score"))
 })
 
 
@@ -886,4 +882,149 @@ test_that("ingredients_for_rxcui() de-duplicates input RxCUIs", {
   expect_equal(nrow(out), 1)
   expect_equal(out$rxcui, "860975")
   expect_equal(out$ingredient_rxcui, "6809")
+})
+
+# test_that("products_for_ingredients() parses products from allrelated fallback", {
+#   fake_rx_get_json <- function(path, query = list()) {
+#     # fetch_via_rela(): return no products from /related + rela = ingredient_of
+#     if (path == "/rxcui/29046/related" &&
+#         identical(query$rela, "ingredient_of")) {
+#       return(list(
+#         relatedGroup = list(
+#           conceptGroup = NULL
+#         )
+#       ))
+#     }
+#
+#     # fetch_via_related(): return no products from /related without rela
+#     if (path == "/rxcui/29046/related" &&
+#         is.null(query$rela)) {
+#       return(list(
+#         allRelatedGroup = list(
+#           conceptGroup = NULL
+#         )
+#       ))
+#     }
+#
+#     # fetch_via_allrelated(): this is the only source that returns a product
+#     if (path == "/rxcui/29046/allrelated") {
+#       return(list(
+#         allRelatedGroup = list(
+#           conceptGroup = list(
+#             list(
+#               tty = "SCD",
+#               conceptProperties = list(
+#                 list(
+#                   rxcui = "11111",
+#                   name = "lisinopril 10 MG Oral Tablet",
+#                   tty = "SCD"
+#                 )
+#               )
+#             )
+#           )
+#         )
+#       ))
+#     }
+#
+#     # fetch_via_drugs_name() and acceptance_for_ing() both use properties
+#     if (path == "/rxcui/29046/properties") {
+#       return(list(
+#         properties = list(
+#           rxcui = "29046",
+#           name = "lisinopril",
+#           tty = "IN"
+#         )
+#       ))
+#     }
+#
+#     # fetch_via_drugs_name(): return no products from /drugs
+#     if (path == "/drugs") {
+#       return(list(
+#         drugGroup = list(
+#           conceptGroup = NULL
+#         )
+#       ))
+#     }
+#
+#     # acceptance_for_ing(): no PIN children
+#     if (path == "/rxcui/29046/related" &&
+#         identical(query$rela, "has_precise_ingredient")) {
+#       return(list(
+#         relatedGroup = list(
+#           conceptGroup = NULL
+#         )
+#       ))
+#     }
+#
+#     # verify_contains(): product must verify that it contains the ingredient
+#     if (path == "/rxcui/11111/related") {
+#       return(list(
+#         relatedGroup = list(
+#           conceptGroup = list(
+#             list(
+#               tty = "IN",
+#               conceptProperties = list(
+#                 list(
+#                   rxcui = "29046",
+#                   name = "lisinopril",
+#                   tty = "IN"
+#                 )
+#               )
+#             )
+#           )
+#         )
+#       ))
+#     }
+#
+#     stop("Unexpected path: ", path)
+#   }
+#
+#   testthat::local_mocked_bindings(
+#     rx_get_json = fake_rx_get_json,
+#     .package = "rxref"
+#   )
+#
+#   out <- products_for_ingredients(
+#     "29046",
+#     ttys = "SCD",
+#     include_combos = TRUE,
+#     show_progress = FALSE
+#   )
+#
+#   expect_s3_class(out, "tbl_df")
+#   expect_equal(nrow(out), 1L)
+#   expect_equal(out$ingredient_rxcui, "29046")
+#   expect_equal(out$product_rxcui, "11111")
+#   expect_equal(out$name, "lisinopril 10 MG Oral Tablet")
+#   expect_equal(out$tty, "SCD")
+#   expect_equal(out$n_ingredients, 1L)
+# })
+
+
+test_that("get_properties() returns NA fields when properties are missing", {
+  fake_rx_get_json <- function(path, query = list()) {
+    list()
+  }
+
+  testthat::local_mocked_bindings(
+    rx_get_json = fake_rx_get_json,
+    .package = "rxref"
+  )
+
+  out <- get_properties("999999", show_progress = FALSE)
+
+  expect_s3_class(out, "tbl_df")
+  expect_equal(nrow(out), 1L)
+  expect_named(out, c(
+    "rxcui",
+    "name",
+    "synonym",
+    "tty",
+    "language",
+    "suppress",
+    "umlscui"
+  ))
+  expect_equal(out$rxcui, "999999")
+  expect_true(is.na(out$name))
+  expect_true(is.na(out$tty))
 })

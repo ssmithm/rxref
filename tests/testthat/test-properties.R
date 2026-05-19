@@ -28,3 +28,21 @@ test_that("get_properties parses RxNorm properties response", {
   expect_equal(out$tty, "IN")
   expect_equal(out$suppress, "N")
 })
+
+test_that("get_properties() returns expected columns for missing input", {
+  out <- get_properties(NA_character_, show_progress = FALSE)
+
+  expect_s3_class(out, "tbl_df")
+  expect_equal(nrow(out), 1L)
+  expect_named(out, c(
+    "rxcui",
+    "name",
+    "synonym",
+    "tty",
+    "language",
+    "suppress",
+    "umlscui"
+  ))
+  expect_true(is.na(out$rxcui))
+  expect_true(is.na(out$name))
+})

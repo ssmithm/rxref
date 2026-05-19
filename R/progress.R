@@ -19,8 +19,6 @@
     show_progress = interactive(),
     min_n = 5L
 ) {
-  .x <- unique(.x)
-
   use_progress <- .rxref_show_progress(show_progress, .x, min_n = min_n)
 
   progress_id <- NULL

@@ -29,89 +29,139 @@ rx_perform_json <- function(req, service = "RxNav") {
   resp <- tryCatch(
     httr2::req_perform(req),
     error = function(e) {
-      cli::cli_abort(
-        c(
-          "Could not reach the {service} API.",
-          "i" = "Check your internet connection or try again later.",
-          "i" = "Original error: {conditionMessage(e)}"
+      rx_abort_api(
+        paste(
+          service, "API request failed.",
+          "rxref could not connect to the API.",
+          "Check your internet connection and try again.",
+          sep = "\n"
         ),
-        class = "rxref_api_error"
-      )
-    }
-  )
-
-  tryCatch(
-    httr2::resp_check_status(resp),
-    error = function(e) {
-      status <- httr2::resp_status(resp)
-
-      if (identical(status, 429L)) {
-        cli::cli_abort(
-          c(
-            "The {service} API returned HTTP 429: too many requests.",
-            "i" = "You may be exceeding the RxNorm API request limit.",
-            "i" = "Try increasing the delay between API calls, for example: {.code rxref_conf(rate_delay = 0.1)}.",
-            "i" = "If you are running many repeated queries, consider using cached results or batching inputs where possible."
-          ),
-          class = "rxref_api_rate_limit_error",
-          parent = e
-        )
-      }
-
-      cli::cli_abort(
-        c(
-          "The {service} API returned an unsuccessful response.",
-          "i" = "HTTP status: {status}.",
-          "i" = "Original error: {conditionMessage(e)}"
-        ),
-        class = "rxref_api_error",
+        class = "rxref_connection_error",
         parent = e
       )
     }
   )
 
+  status <- httr2::resp_status(resp)
+
+  if (identical(status, 429L)) {
+    rx_abort_api(
+      paste(
+        service, "API request failed with status 429.",
+        "The request may have been rate-limited.",
+        "Try increasing `rate_delay` or retrying later.",
+        sep = "\n"
+      ),
+      class = "rxref_rate_limit_error"
+    )
+  }
+
+  if (identical(status, 404L)) {
+    rx_abort_api(
+      paste(
+        service, "API request failed with status 404.",
+        "The requested endpoint or resource was not found.",
+        sep = "\n"
+      ),
+      class = "rxref_not_found_error"
+    )
+  }
+
+  if (status >= 500L) {
+    rx_abort_api(
+      paste(
+        service, "API request failed with status", status, ".",
+        "This appears to be a temporary server-side issue.",
+        "Please retry later.",
+        sep = "\n"
+      ),
+      class = "rxref_server_error"
+    )
+  }
+
+  if (status >= 400L) {
+    rx_abort_api(
+      paste(
+        service, "API request failed with status", status, ".",
+        "The API returned an unsuccessful response.",
+        sep = "\n"
+      ),
+      class = "rxref_http_error"
+    )
+  }
+
   txt <- tryCatch(
     httr2::resp_body_string(resp),
     error = function(e) {
-      cli::cli_abort(
-        c(
-          "Could not read the response from the {service} API.",
-          "i" = "Original error: {conditionMessage(e)}"
+      msg <- conditionMessage(e)
+
+      if (grepl("empty body", msg, ignore.case = TRUE)) {
+        rx_abort_api(
+          paste(
+            service, "API response was empty.",
+            "The API returned an empty response body.",
+            sep = "\n"
+          ),
+          class = "rxref_empty_response_error",
+          parent = e
+        )
+      }
+
+      rx_abort_api(
+        paste(
+          service, "API response could not be read.",
+          "The API returned a response, but rxref could not read the response body.",
+          sep = "\n"
         ),
-        class = "rxref_api_error"
+        class = "rxref_response_error",
+        parent = e
       )
     }
   )
 
+  if (!nzchar(txt)) {
+    rx_abort_api(
+      paste(
+        service, "API response was empty.",
+        "The API returned an empty response body.",
+        sep = "\n"
+      ),
+      class = "rxref_empty_response_error"
+    )
+  }
+
   tryCatch(
     jsonlite::fromJSON(txt, simplifyVector = FALSE),
     error = function(e) {
-      cli::cli_abort(
-        c(
-          "Could not parse the response from the {service} API as JSON.",
-          "i" = "The API response may have changed or may be temporarily unavailable.",
-          "i" = "Original error: {conditionMessage(e)}"
+      rx_abort_api(
+        paste(
+          service, "API response could not be parsed.",
+          "The API returned malformed or unexpected JSON.",
+          "Please retry later.",
+          sep = "\n"
         ),
-        class = "rxref_api_error"
+        class = "rxref_json_error",
+        parent = e
       )
     }
   )
 }
 
+# helpers for rx_get_json() caching
+.rxref_memo_env <- new.env(parent = emptyenv())
 
-#' @keywords internal
-#' @noRd
-rx_get_json <- (function() {
-  get_cache <- function() {
-    opt <- getOption("rxref.cache")
-    if (inherits(opt, "memoise_cache")) return(opt)
+.rxref_get_cache <- function() {
+  opt <- getOption("rxref.cache")
 
-    memoise::cache_filesystem(
-      path = tools::R_user_dir("rxref", which = "cache")
-    )
+  if (inherits(opt, "cachem")) {
+    return(opt)
   }
 
-  mem_fun <- memoise::memoise(
+  cachem::cache_mem()
+}
+
+.make_rx_get_json <- function(cache) {
+  memoise::memoise(
     function(path, query = list()) {
       rx_sleep()
 
@@ -127,11 +177,25 @@ rx_get_json <- (function() {
 
       rx_perform_json(req, service = "RxNorm")
     },
-    cache = get_cache()
+    cache = cache
   )
+}
 
-  mem_fun
-})()
+#' @keywords internal
+#' @noRd
+rx_get_json <- function(path, query = list()) {
+  cache <- .rxref_get_cache()
+
+  if (
+    is.null(.rxref_memo_env$rx_get_json) ||
+    !identical(cache, .rxref_memo_env$rx_get_json_cache)
+  ) {
+    .rxref_memo_env$rx_get_json <- .make_rx_get_json(cache)
+    .rxref_memo_env$rx_get_json_cache <- cache
+  }
+
+  .rxref_memo_env$rx_get_json(path = path, query = query)
+}
 
 #' @keywords internal
 #' @noRd
@@ -154,19 +218,8 @@ rxclass_http_client <- function() {
   paste(x, collapse = " ")
 }
 
-#' @keywords internal
-#' @noRd
-rxclass_get_json <- (function() {
-  get_cache <- function() {
-    opt <- getOption("rxref.cache")
-    if (inherits(opt, "memoise_cache")) return(opt)
-
-    memoise::cache_filesystem(
-      path = tools::R_user_dir("rxref", which = "cache")
-    )
-  }
-
-  mem_fun <- memoise::memoise(
+.make_rxclass_get_json <- function(cache) {
+  memoise::memoise(
     function(path, query = list()) {
       rx_sleep()
 
@@ -182,11 +235,25 @@ rxclass_get_json <- (function() {
 
       rx_perform_json(req, service = "RxClass")
     },
-    cache = get_cache()
+    cache = cache
   )
+}
 
-  mem_fun
-})()
+#' @keywords internal
+#' @noRd
+rxclass_get_json <- function(path, query = list()) {
+  cache <- .rxref_get_cache()
+
+  if (
+    is.null(.rxref_memo_env$rxclass_get_json) ||
+    !identical(cache, .rxref_memo_env$rxclass_get_json_cache)
+  ) {
+    .rxref_memo_env$rxclass_get_json <- .make_rxclass_get_json(cache)
+    .rxref_memo_env$rxclass_get_json_cache <- cache
+  }
+
+  .rxref_memo_env$rxclass_get_json(path = path, query = query)
+}
 
 #' @keywords internal
 #' @noRd
@@ -392,18 +459,4 @@ hyphenate_ndc_5_4_2 <- function(ndc) {
   })
 }
 
-#' @keywords internal
-#' @noRd
-rx_perform <- function(req) {
-  tryCatch(
-    httr2::req_perform(req),
-    httr2_http_429 = function(cnd) {
-      cli::cli_abort(c(
-        "RxNorm returned HTTP 429: too many requests.",
-        "i" = "You may be exceeding NLM's recommended limit of 20 requests per second per IP address.",
-        "i" = "Try increasing the request delay, for example: {.code rxref_conf(rate_delay = 0.1)}.",
-        "i" = "If you are making many repeated calls, consider relying on caching or batching inputs where possible."
-      ), parent = cnd)
-    }
-  )
-}
+

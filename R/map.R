@@ -128,12 +128,22 @@ map_to <- function(
       function(ndc) {
         ndc11 <- ndc_to_11(ndc)
 
+        if (is.na(ndc11) || !nzchar(ndc11)) {
+          return(
+            tibble::tibble(
+              input = ndc,
+              ndc11 = NA_character_,
+              rxcui = NA_character_
+            )
+          )
+        }
+
         res <- rx_get_json(
           "/rxcui",
           query = list(idtype = "NDC", id = ndc11)
         )
 
-        rxs <- res$idGroup$rxnormId
+        rxs <- rx_pluck_chr(res, "idGroup", "rxnormId")
 
         rxs <- if (length(rxs)) {
           unlist(rxs, use.names = FALSE)
@@ -165,7 +175,7 @@ map_to <- function(
 
         if (history == "active") {
           res <- rx_get_json(paste0("/rxcui/", id, "/ndcs"))
-          ndcs <- res$ndcGroup$ndcList$ndc
+          ndcs <- rx_pluck_chr(res, "ndcGroup", "ndcList", "ndc")
 
           ndcs <- if (length(ndcs)) {
             unlist(ndcs, use.names = FALSE)
@@ -189,7 +199,7 @@ map_to <- function(
             query = list(history = history_value)
           )
 
-          hist <- res$historicalNdcConcept$historicalNdcTime
+          hist <- rx_pluck_list(res, "historicalNdcConcept", "historicalNdcTime")
 
           if (is.null(hist) || !length(hist)) {
             out <- tibble::tibble(
@@ -201,12 +211,12 @@ map_to <- function(
             )
           } else {
             out <- purrr::map_dfr(hist, function(h) {
-              ndc_time <- h$ndcTime
+              ndc_time <- rx_pluck_list(h, "ndcTime")
 
               if (is.null(ndc_time) || !length(ndc_time)) {
                 return(tibble::tibble(
                   rxcui = id,
-                  related_rxcui = as.character(h$rxcui),
+                  related_rxcui = rx_scalar_chr(rx_pluck_chr(h, "rxcui")),
                   ndc11 = NA_character_,
                   ndc_start_date = NA_character_,
                   ndc_end_date = NA_character_
@@ -214,7 +224,7 @@ map_to <- function(
               }
 
               purrr::map_dfr(ndc_time, function(nt) {
-                ndcs <- nt$ndc
+                ndcs <- rx_pluck_chr(nt, "ndc")
 
                 ndcs <- if (length(ndcs)) {
                   unlist(ndcs, use.names = FALSE)
@@ -224,10 +234,10 @@ map_to <- function(
 
                 tibble::tibble(
                   rxcui = id,
-                  related_rxcui = as.character(h$rxcui),
+                  related_rxcui = rx_scalar_chr(rx_pluck_chr(h, "rxcui")),
                   ndc11 = as.character(ndcs),
-                  ndc_start_date = as.character(nt$startDate),
-                  ndc_end_date = as.character(nt$endDate)
+                  ndc_start_date = rx_scalar_chr(rx_pluck_chr(nt, "startDate")),
+                  ndc_end_date = rx_scalar_chr(rx_pluck_chr(nt, "endDate"))
                 )
               })
             })
@@ -250,15 +260,13 @@ map_to <- function(
           )
 
           # common JSON shape: ndcStatus$status
-          if (
-            is.null(st) ||
-            is.null(st$ndcStatus) ||
-            is.null(st$ndcStatus$status)
-          ) {
+          status_value <- rx_scalar_chr(rx_pluck_chr(st, "ndcStatus", "status"))
+
+          if (is.na(status_value) || !nzchar(status_value)) {
             return(NA_character_)
           }
 
-          as.character(st$ndcStatus$status)
+          status_value
         })
 
         out$ndc_status <- stats

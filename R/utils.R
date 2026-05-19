@@ -33,6 +33,6 @@
 #' @importFrom stringr str_detect str_trim str_remove_all str_replace_all str_squish
 #' @importFrom vctrs vec_recycle vec_cast vec_c vec_rbind
 #' @importFrom jsonlite fromJSON
-#' @importFrom memoise memoise cache_filesystem
+#' @importFrom memoise memoise
 #' @importFrom rlang .data .env
 NULL

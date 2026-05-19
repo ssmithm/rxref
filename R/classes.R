@@ -706,7 +706,7 @@ rxclass_relas <- function(rela_source) {
     query = list(relaSource = rela_source)
   )
 
-  relas <- res$relaList$relaName
+  relas <- rx_pluck_chr(res, "relaList", "relaName")
 
   if (is.null(relas) || length(relas) == 0) {
     return(tibble::tibble(
@@ -729,7 +729,7 @@ rxclass_relas <- function(rela_source) {
 rxclass_rela_sources <- function() {
   res <- rxclass_get_json("/relaSources")
 
-  sources <- res$relaSourceList$relaSourceName
+  sources <- rx_pluck_chr(res, "relaSourceList", "relaSourceName")
 
   if (is.null(sources) || length(sources) == 0) {
     return(tibble::tibble(rela_source = character()))
@@ -760,26 +760,26 @@ empty_rxclass_drug_classes <- function() {
 #' @keywords internal
 #' @noRd
 parse_rxclass_drug_classes <- function(res) {
-  classes <- res$rxclassDrugInfoList$rxclassDrugInfo
+  classes <- rx_pluck_list(res, "rxclassDrugInfoList", "rxclassDrugInfo")
 
-  if (is.null(classes) || length(classes) == 0) {
+  if (!length(classes)) {
     return(empty_rxclass_drug_classes())
   }
 
   purrr::map_dfr(classes, function(z) {
-    concept <- z$minConcept
-    cls <- z$rxclassMinConceptItem
+    concept <- rx_pluck(z, "minConcept", .default = list())
+    cls <- rx_pluck(z, "rxclassMinConceptItem", .default = list())
 
     tibble::tibble(
-      rxcui = null2chr(concept$rxcui),
-      drug_name = null2chr(concept$name),
-      drug_tty = null2chr(concept$tty),
-      class_id = null2chr(cls$classId),
-      class_name = null2chr(cls$className),
-      class_type = null2chr(cls$classType),
-      class_url = null2chr(cls$classUrl),
-      rela = null2chr(z$rela),
-      rela_source = null2chr(z$relaSource)
+      rxcui = rx_scalar_chr(rx_pluck_chr(concept, "rxcui")),
+      drug_name = rx_scalar_chr(rx_pluck_chr(concept, "name")),
+      drug_tty = rx_scalar_chr(rx_pluck_chr(concept, "tty")),
+      class_id = rx_scalar_chr(rx_pluck_chr(cls, "classId")),
+      class_name = rx_scalar_chr(rx_pluck_chr(cls, "className")),
+      class_type = rx_scalar_chr(rx_pluck_chr(cls, "classType")),
+      class_url = rx_scalar_chr(rx_pluck_chr(cls, "classUrl")),
+      rela = rx_scalar_chr(rx_pluck_chr(z, "rela")),
+      rela_source = rx_scalar_chr(rx_pluck_chr(z, "relaSource"))
     )
   })
 }
@@ -788,9 +788,9 @@ parse_rxclass_drug_classes <- function(res) {
 #' @keywords internal
 #' @noRd
 parse_rxclass_find_classes <- function(res) {
-  classes <- res$rxclassMinConceptList$rxclassMinConcept
+  classes <- rx_pluck_list(res, "rxclassMinConceptList", "rxclassMinConcept")
 
-  if (is.null(classes) || length(classes) == 0) {
+  if (!length(classes)) {
     return(tibble::tibble(
       class_id = character(),
       class_name = character(),
@@ -801,14 +801,13 @@ parse_rxclass_find_classes <- function(res) {
 
   purrr::map_dfr(classes, function(z) {
     tibble::tibble(
-      class_id = null2chr(z$classId),
-      class_name = null2chr(z$className),
-      class_type = null2chr(z$classType),
-      class_url = null2chr(z$classUrl)
+      class_id = rx_scalar_chr(rx_pluck_chr(z, "classId")),
+      class_name = rx_scalar_chr(rx_pluck_chr(z, "className")),
+      class_type = rx_scalar_chr(rx_pluck_chr(z, "classType")),
+      class_url = rx_scalar_chr(rx_pluck_chr(z, "classUrl"))
     )
   })
 }
-
 
 #' @keywords internal
 #' @noRd
@@ -834,27 +833,27 @@ parse_rxclass_members <- function(res,
                                   class_id = NA_character_,
                                   rela_source = NA_character_,
                                   rela = NA_character_) {
-  members <- res$drugMemberGroup$drugMember
+  members <- rx_pluck_list(res, "drugMemberGroup", "drugMember")
 
-  if (is.null(members) || length(members) == 0) {
+  if (!length(members)) {
     return(empty_rxclass_members())
   }
 
   purrr::map_dfr(members, function(z) {
-    concept <- z$minConcept
-    attrs <- parse_rxclass_node_attrs(z$nodeAttr)
+    concept <- rx_pluck(z, "minConcept", .default = list())
+    attrs <- parse_rxclass_node_attrs(rx_pluck_list(z, "nodeAttr"))
 
     tibble::tibble(
-      rxcui = null2chr(concept$rxcui),
-      name = null2chr(concept$name),
-      tty = null2chr(concept$tty),
+      rxcui = rx_scalar_chr(rx_pluck_chr(concept, "rxcui")),
+      name = rx_scalar_chr(rx_pluck_chr(concept, "name")),
+      tty = rx_scalar_chr(rx_pluck_chr(concept, "tty")),
       class_id = class_id,
       rela_source = rela_source,
       rela = if (is.null(rela)) NA_character_ else rela,
-      source_id = null2chr(attrs$SourceId),
-      source_name = null2chr(attrs$SourceName),
-      source_url = null2chr(attrs$SourceUrl),
-      relation = null2chr(attrs$Relation)
+      source_id = rx_scalar_chr(attrs$SourceId),
+      source_name = rx_scalar_chr(attrs$SourceName),
+      source_url = rx_scalar_chr(attrs$SourceUrl),
+      relation = rx_scalar_chr(attrs$Relation)
     )
   })
 }
@@ -870,13 +869,13 @@ parse_rxclass_node_attrs <- function(node_attr) {
     Relation = NA_character_
   )
 
-  if (is.null(node_attr) || length(node_attr) == 0) {
+  if (!length(node_attr)) {
     return(out)
   }
 
   for (a in node_attr) {
-    nm <- null2chr(a$attrName)
-    val <- null2chr(a$attrValue)
+    nm <- rx_scalar_chr(rx_pluck_chr(a, "attrName"))
+    val <- rx_scalar_chr(rx_pluck_chr(a, "attrValue"))
 
     if (!is.na(nm) && nm %in% names(out)) {
       out[[nm]] <- val

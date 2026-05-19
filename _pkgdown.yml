@@ -80,7 +80,13 @@ reference:
     dose form, route, and route-specific product filtering.
   contents:
   - get_clinical_attributes
+
+- title: "Product filtering"
+  desc: >
+    Fine-tuned filtering of product RxCUI lists.
+  contents:
   - filter_products_by_route
+  - exclude_products_with_ingredients
 
 - title: "Concept type helpers"
   desc: >

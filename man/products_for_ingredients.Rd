@@ -9,31 +9,71 @@ products_for_ingredients(
   ttys = .rxref_default_ttys,
   route = NULL,
   include_combos = TRUE,
+  concept_status = c("active", "active_and_historical"),
+  historical_status = c("Obsolete", "Remapped", "Quantified", "NotCurrent"),
   show_progress = interactive()
 )
 }
 \arguments{
 \item{ingredient_rxcui}{Character vector of ingredient CUIs (TTY \code{IN} or \code{PIN}).}
 
-\item{ttys}{Character vector of TTYs to include (default: product-facing
-\code{c("SCD","SBD","GPCK","BPCK")}). Pass a larger set if you want groups,
-components, names, etc. (e.g., \code{c(.rxref_default_ttys, .rxref_extended_ttys)}).}
+\item{ttys}{Character vector of TTYs to include. Defaults to product-facing
+TTYs returned by \code{\link[=product_ttys]{product_ttys()}}. Pass a larger set if you want groups,
+components, branded concepts, or other product-related concepts, for example
+\code{product_ttys("extended_product")}.}
 
 \item{route}{Optional character vector of routes to retain. If \code{NULL}, no
 route filtering is performed. Route filtering uses \code{\link[=get_clinical_attributes]{get_clinical_attributes()}}.
-Note that route is intended for product-level TTYs (see \code{.rxref_default_ttys})
-and may not filter well on other TTYs such as those in \code{.rxref_extended_ttys}.}
+Route filtering is intended for product-level TTYs and may not filter well
+on broader group or package TTYs.}
 
-\item{include_combos}{Logical; if \code{FALSE}, keep only single-ingredient
-products (counting distinct \code{IN}; if none present, falls back to distinct \code{PIN}).}
+\item{include_combos}{Logical. If \code{FALSE}, keep only single-ingredient
+products, where ingredient count is based on distinct \code{IN} concepts when
+available and otherwise falls back to distinct \code{PIN} concepts.}
 
-\item{show_progress}{Logical. Show a progress bar in interactive sessions.}
+\item{concept_status}{Character. Which RxNorm concept universe to search.
+\code{"active"} uses active-scope RxNav relationship endpoints and is the
+default. \code{"active_and_historical"} also searches historical RxNorm concepts
+using all-status concept retrieval and RxCUI history status metadata.
+Historical searching is slower and is intended for mapping older
+prescribing or dispensing data.}
+
+\item{historical_status}{Character vector of historical RxNorm statuses to
+include when \code{concept_status = "active_and_historical"}. Defaults to
+\code{c("Obsolete", "Remapped", "Quantified", "NotCurrent")}. These values use
+RxNorm status definitions:
+\describe{
+\item{\code{"Obsolete"}}{The concept is obsolete in the current RxNorm data set,
+and RxNorm has not designated an active concept as equivalent.}
+\item{\code{"Remapped"}}{The concept was active or obsolete at one time, is no
+longer in the current data set, and has been remapped to one or more
+active or obsolete concepts.}
+\item{\code{"Quantified"}}{The concept has been designated as non-dispensable
+because it lacks a quantity factor; related concepts with quantity
+factors may be available.}
+\item{\code{"NotCurrent"}}{The concept either exists in the current data set
+without RxNorm vocabulary terms, or existed in a previous monthly
+release but has since been removed and not remapped.}
+}
+See the RxNorm API documentation for concept status values:
+\url{https://lhncbc.nlm.nih.gov/RxNav/APIs/api-RxNorm.getAllConceptsByStatus.html}.}
+
+\item{show_progress}{Logical. Show progress bars for long-running API
+retrieval, product matching, and optional route filtering steps. Defaults
+to \code{interactive()}.}
 }
 \value{
-Tibble with columns: \code{ingredient_rxcui}, \code{product_rxcui}, \code{name}, \code{tty}, \code{n_ingredients}.
+A tibble with one row per matched ingredient/product concept pair.
+For \code{concept_status = "active"}, columns include \code{ingredient_rxcui},
+\code{product_rxcui}, \code{name}, \code{tty}, and \code{n_ingredients}. When
+\code{concept_status = "active_and_historical"}, additional columns include
+\code{concept_status}, \code{active_start_date}, \code{active_end_date},
+\code{release_start_date}, and \code{release_end_date}.
 }
 \description{
 Tries multiple RxNav endpoints and verifies candidates truly contain the
-queried ingredient (or its PIN children). Handles cases where TTY appears
-only at the group level. Unions candidates from all sources.
+queried ingredient or one of its acceptable related ingredient concepts.
+The function unions candidates from multiple sources, verifies ingredient
+containment, and reports the number of ingredients represented by each
+product concept.
 }

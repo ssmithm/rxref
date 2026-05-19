@@ -17,23 +17,41 @@ get_properties <- function(rxcui, show_progress = interactive()) {
     rxcui,
     function(id) {
       if (is.na(id) || !nzchar(id)) {
-        return(tibble::tibble(rxcui = NA_character_))
+        return(empty_properties_result(id))
       }
 
       res <- rx_get_json(paste0("/rxcui/", id, "/properties"))
-      p <- res$properties
+      p <- rx_pluck(res, "properties", .default = list())
+
+      api_rxcui <- rx_scalar_chr(rx_pluck_chr(p, "rxcui"))
 
       tibble::tibble(
-        rxcui = null2na(p$rxcui),
-        name = null2na(p$name),
-        synonym = null2na(p$synonym),
-        tty = null2na(p$tty),
-        language = null2na(p$language),
-        suppress = null2na(p$suppress),
-        umlscui = null2na(p$umlscui)
+        rxcui = if (is.na(api_rxcui) || !nzchar(api_rxcui)) id else api_rxcui,
+        name = rx_scalar_chr(rx_pluck_chr(p, "name")),
+        synonym = rx_scalar_chr(rx_pluck_chr(p, "synonym")),
+        tty = rx_scalar_chr(rx_pluck_chr(p, "tty")),
+        language = rx_scalar_chr(rx_pluck_chr(p, "language")),
+        suppress = rx_scalar_chr(rx_pluck_chr(p, "suppress")),
+        umlscui = rx_scalar_chr(rx_pluck_chr(p, "umlscui"))
       )
     },
     name = "Getting properties",
     show_progress = show_progress
+  )
+}
+
+#' Empty properties result
+#'
+#' @keywords internal
+#' @noRd
+empty_properties_result <- function(rxcui = NA_character_) {
+  tibble::tibble(
+    rxcui = rxcui,
+    name = NA_character_,
+    synonym = NA_character_,
+    tty = NA_character_,
+    language = NA_character_,
+    suppress = NA_character_,
+    umlscui = NA_character_
   )
 }

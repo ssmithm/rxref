@@ -87,9 +87,9 @@ test_that("filter_products_by_route filters using mocked clinical route attribut
 
   expect_equal(nrow(out), 1)
   expect_equal(out$product_rxcui, "10")
-  expect_equal(out$routes, "ORAL")
-  expect_equal(out$dose_forms, "Oral Tablet")
-  expect_equal(out$dose_form_groups, "PILL")
+  expect_equal(out$route, "ORAL")
+  expect_equal(out$dose_form, "Oral Tablet")
+  expect_equal(out$dose_form_group, "PILL")
 })
 
 test_that("filter_products_by_route can drop appended route columns", {
@@ -126,7 +126,7 @@ test_that("filter_products_by_route can drop appended route columns", {
 
   expect_equal(nrow(out), 1)
   expect_equal(out$product_rxcui, "10")
-  expect_false("routes" %in% names(out))
-  expect_false("dose_forms" %in% names(out))
-  expect_false("dose_form_groups" %in% names(out))
+  expect_false("route" %in% names(out))
+  expect_false("dose_form" %in% names(out))
+  expect_false("dose_form_group" %in% names(out))
 })

@@ -4,10 +4,19 @@
 \alias{get_clinical_attributes}
 \title{Clinical attributes from the concept (SCD/SBD) or related SCD/SBD}
 \usage{
-get_clinical_attributes(rxcui, show_progress = interactive())
+get_clinical_attributes(
+  rxcui,
+  include_historical = FALSE,
+  show_progress = interactive()
+)
 }
 \arguments{
 \item{rxcui}{Character vector of RxCUIs}
+
+\item{include_historical}{Logical. If \code{TRUE}, use RxCUI history status
+metadata as a fallback for RxCUIs that do not return active clinical
+attributes. This is useful for obsolete, remapped, quantified, or otherwise
+non-current RxCUIs found in historical prescribing data.}
 
 \item{show_progress}{Logical. Show a progress bar in interactive sessions.
 Progress is shown only when at least 5 inputs are supplied.}
@@ -26,9 +35,12 @@ A tibble with columns:
 \item{is_brand}{Logical; TRUE for branded clinical concepts (SBD/BPCK)}
 \item{is_generic}{Logical; TRUE for generic clinical concepts (SCD/GPCK)}
 \item{ingredient_count}{Number of distinct ingredients}
-\item{ingredient_rxcui}{List-column of ingredient RxCUIs}
-\item{ingredient_name}{List-column of ingredient names}
-\item{ingredient_tty}{List-column of ingredient term types (IN/PIN/MIN)}
+\item{ingredient_rxcui}{Ingredient RxCUI. For combination products,
+multiple values are returned as semicolon-delimited strings.}
+\item{ingredient_name}{Ingredient name. For combination products,
+multiple values are returned as semicolon-delimited strings.}
+\item{ingredient_tty}{Ingredient term type (IN/PIN/MIN). For combination
+products, multiple values are returned as semicolon-delimited strings.}
 \item{is_multi_ingredient}{Logical; TRUE if >1 ingredient}
 \item{suppress}{Raw RxNorm suppress flag from properties}
 \item{status}{Simple status derived from suppress: "ACTIVE" vs "INACTIVE"}
@@ -45,9 +57,12 @@ brand/generic flags, ingredient summaries, and a simple active/inactive status.
 Note there is a fair amount of parsing of the RxNorm STR value to try to extract
 relevant information (e.g., strength, dose_form), so check closely before trusting.
 There may be edge cases that are not correctly parsed.
+
+For combination products, ingredient-related columns may contain multiple
+semicolon-delimited values, such as \code{"amlodipine; valsartan"}.
 }
 \examples{
-\donttest{
+\dontrun{
 get_clinical_attributes(c("861007","860975")) |>
   dplyr::select(rxcui, related_rxcui, name, strength, dose_form, route, tty) |>
   head()

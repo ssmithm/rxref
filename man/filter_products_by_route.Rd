@@ -8,6 +8,7 @@ filter_products_by_route(
   products,
   route = "ORAL",
   keep_route_info = TRUE,
+  include_historical = FALSE,
   show_progress = interactive()
 )
 }
@@ -21,6 +22,13 @@ output of \code{\link[=products_for_ingredients]{products_for_ingredients()}}.}
 
 \item{keep_route_info}{Logical. If \code{TRUE} (default), append route, dose form, and
 dose-form group summaries to the returned table.}
+
+\item{include_historical}{Logical. If \code{TRUE}, use RxCUI history status
+metadata as a fallback for RxCUIs that do not return active clinical
+attributes. This is useful for obsolete, remapped, quantified, or otherwise
+non-current RxCUIs found in historical prescribing data. If \code{products}
+contains a \code{concept_status} column with non-\code{"active"} value, historical
+lookup is enabled automatically.}
 
 \item{show_progress}{Logical. Show a progress bar in interactive sessions.
 Progress is shown only when at least 5 inputs are supplied.}
@@ -36,7 +44,7 @@ products across multiple routes, such as oral tablets, ophthalmic solutions,
 injectables, patches, or topical formulations.
 }
 \examples{
-\donttest{
+\dontrun{
 ing <- find_ingredients("metoprolol")
 
 prods <- products_for_ingredients(
@@ -45,6 +53,15 @@ prods <- products_for_ingredients(
 )
 
 filter_products_by_route(prods, route = "ORAL")
+
+# Historical/current products can also be route-filtered
+prods_hist <- products_for_ingredients(
+  ing$rxcui,
+  include_combos = TRUE,
+  concept_status = "active_and_historical"
+)
+
+filter_products_by_route(prods_hist, route = "ORAL")
 }
 
 }

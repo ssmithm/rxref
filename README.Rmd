@@ -16,56 +16,184 @@ knitr::opts_chunk$set(
 # rxref
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/ssmithm/rxref/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ssmithm/rxref/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-**rxref** is an R package that includes a set of tidy utilities for querying 
-the [National Library of Medicine](https://www.nlm.nih.gov/)'s [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/index.html) API. RxNorm 
-is a system of normalized names for clinical drugs as well as linkages from 
-these names to many of the drug vocabularies commonly used in pharmacy 
-management and drug interaction software, including those of First Databank, 
-Micromedex, Multum, and Gold Standard Drug Database. 
+**rxref** is an R package for working with medication identifiers from the
+National Library of Medicine's RxNorm and RxClass APIs. It provides tidy,
+vectorized helpers for resolving medication names to RxCUIs, expanding
+ingredients to product concepts, mapping between RxCUIs and NDCs, retrieving
+clinical product attributes, and querying selected drug class relationships.
 
-**rxref** was originally built to facilitate pharmacoepidemiologic research in 
-the [UF CVmedLab](https://cvmedlab.org/), where we often need to identify 
-medication prescriptions or pharmacy dispensings as a proxy for medication 
-exposure or outcomes. 
+The package is designed for pharmacoepidemiologic and health services research
+workflows where medication exposure definitions often need to move between
+ingredient names, RxNorm concepts, National Drug Codes (NDCs), routes, dose
+forms, and therapeutic classes.
 
-The core use case for **rxref** is identifying RxCUIs and NDCs related to
-user-supplied medications or medication classes. The package also includes
-helpers for retrieving RxNorm properties, mapping between RxCUIs and NDCs,
-identifying ingredient concepts, filtering products by route, querying selected
-RxClass relationships, and working with common RxNorm term type sets.
+**rxref** was originally built to support pharmacoepidemiologic research in the
+[UF CVmedLab](https://cvmedlab.org/), where we often need reproducible,
+transparent medication definitions for prescriptions, pharmacy dispensings,
+and claims-based drug exposure measures.
+
+## What rxref can do
+
+Common workflows include:
+
+- resolve free-text medication names to RxNorm ingredient concepts with
+  `find_ingredients()` and `resolve()`;
+- expand ingredient RxCUIs to product RxCUIs with `products_for_ingredients()`;
+- include active-only or active plus historical RxNorm concepts using
+  `concept_status`;
+- map between RxCUIs and NDCs with `map_to()`, `map_rxcui_to_ndc()`, and
+  `map_ndc_to_rxcui()`;
+- retrieve product metadata with `get_properties()` and
+  `get_clinical_attributes()`;
+- filter products by route with `filter_products_by_route()`;
+- query selected RxClass relationships with helpers such as `get_atc()`,
+  `get_epc()`, and `get_medrt()`;
+- use predefined RxNorm term type sets with `product_ttys()` and
+  `tty_catalogue()`.
 
 ## Installation
 
-You can install the development version of rxref from 
+You can install the development version of `rxref` from 
 [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("remotes")
-remotes::install_github("ssmithm/rxref")
+# install.packages("pak")
+# pak::pak("ssmithm/rxref")
 ```
 
-## Example
+## Basic Workflow: ingredients to products
 
-This is a basic example for querying RxCUIs associated with lisinopril (a blood pressure-lowering drug):
+This is a basic example for querying product RxCUIs associated with the ingredient lisinopril (a blood pressure-lowering drug):
 
 ```{r ex1}
 library(rxref)
-lisinopril.ing <- find_ingredients('lisinopril')
-lisinopril.ing |> knitr::kable()
+library(dplyr)
 
-lisinopril.rxcuis <- products_for_ingredients(lisinopril.ing$rxcui, ttys = c("SCD", "SBD"), include_combos = TRUE)
+lisinopril_ing <- find_ingredients("lisinopril")
 
-# Resulting table of all related products with TTY in {SCD, SBD}
-lisinopril.rxcuis |> 
+lisinopril_products <- products_for_ingredients(
+  lisinopril_ing$rxcui,
+  ttys = product_ttys("default"),
+  include_combos = TRUE
+)
+
+# Resulting table 
+lisinopril_products |> 
   dplyr::mutate(name = paste0("`", name, "`")) |> 
   knitr::kable()
 
+
 # Count of TTYs in resulting table
-aggregate(
-  x = list(count = rep(1, nrow(lisinopril.rxcuis))), 
-  by = list(tty = lisinopril.rxcuis$tty), 
-  FUN = sum
+lisinopril_products |> 
+  count(tty, n_ingredients, sort=TRUE)
+```
+
+## Active and historical RxNorm concepts
+
+By default, `products_for_ingredients()` searches active RxNorm concepts:
+
+```{r active_historical}
+products_for_ingredients(
+  "29046",
+  ttys = product_ttys("extended_product"),
+  concept_status = "active"
 ) |> knitr::kable()
 ```
+
+For older prescribing (or dispensing) data, users may need products that are no
+longer active in the current RxNorm release. Set `concept_status = "active_and_historical"` 
+to include active concepts plus selected historical statuses:
+
+```{r active_historical2}
+products_for_ingredients(
+  "1369",
+  ttys = "SCD",
+  include_combos = FALSE,
+  concept_status = "active_and_historical"
+) |> knitr::kable()
+```
+
+Historical searches return additional status and date fields, including
+concept_status, active_start_date, active_end_date,
+release_start_date, and release_end_date.
+
+**Note**: Historical searches are slower than active-only searches because they require
+broader RxNorm status lookups. `rxref` caches repeated API calls where possible,
+but active-only queries should be preferred when historical concepts are not
+needed.
+
+## Clinical product attributes and route filtering
+
+`get_clinical_attributes()` retrieves product-level attributes such as
+ingredients, dose form, dose form group, route, strength, and ingredient count.
+
+```{r clinical_attrs}
+attrs <- get_clinical_attributes(lisinopril_products$product_rxcui)
+
+attrs |>
+  select(rxcui, related_rxcui, name, strength, dose_form, route, tty)
+```
+
+Products can also be filtered by route:
+
+```{r route_filtering}
+oral_lisinopril <- filter_products_by_route(
+  lisinopril_products,
+  route = "ORAL"
+)
+
+oral_lisinopril 
+```
+
+## Mapping between RxCUIs and NDCs
+
+RxCUIs can be mapped to NDCs (and vice-versa):
+
+```{r rxcui_to_ndc}
+ndcs <- map_rxcui_to_ndc("314077")
+
+ndcs
+```
+
+The direction-agnostic `map_to()` function can be used when you want to map
+between identifier types with one interface:
+
+```{r agnostic_map_to}
+map_to("314077", to = "ndc") 
+```
+
+## Drug class relationships
+
+`rxref` includes selected helpers for querying RxClass relationships, including
+ATC, EPC, and MED-RT classes.
+
+```{r class_rels}
+get_atc("29046")
+get_epc("29046")
+get_medrt("29046")
+```
+
+## API use and caching
+
+`rxref` queries public RxNorm and RxClass APIs. The package includes configurable
+rate-delay and caching behavior to reduce repeated API requests and to support
+longer medication-definition workflows. Note that RxNorm indicates a rate of 
+[no more than 20 API requests per second per IP](https://lhncbc.nlm.nih.gov/RxNav/TermsofService.html).
+
+```{r conf}
+rxref_conf()
+rxref_conf(rate_delay = 0.1)
+```
+
+## Notes
+
+RxNorm concepts and NDC mappings can change over time. For reproducible
+research, consider recording the date of API access and retaining intermediate
+drug-definition outputs used in analyses.
+
+`rxref` is intended to support research workflows and medication-definition
+development. Users should review outputs carefully before using them in any 
+high-stakes regulatory, clinical, or production settings.

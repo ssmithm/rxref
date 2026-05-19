@@ -68,30 +68,38 @@ resolve_name <- function(term, max_entries = 1) {
     maxEntries = max_entries
   ))
 
-  cand <- approx$approximateGroup$candidate
-  if (is.null(cand)) {
+  cand <- rx_pluck_list(approx, "approximateGroup", "candidate")
+
+  if (!length(cand)) {
     return(tibble::tibble(
-      input = term, type = "name",
-      rxcui = NA_character_, name = NA_character_, tty = NA_character_,
-      score = NA_real_, matched_term = NA_character_
+      input = term,
+      type = "name",
+      rxcui = NA_character_,
+      name = NA_character_,
+      tty = NA_character_,
+      score = NA_real_,
+      matched_term = NA_character_
     ))
   }
 
   cand <- cand[seq_len(min(length(cand), max_entries))]
   rows <- purrr::map(cand, function(c) {
-    rxcui <- null2na(c$rxcui)
-    props <- if (!is.na(rxcui))
+    rxcui <- rx_scalar_chr(rx_pluck_chr(c, "rxcui"))
+
+    props <- if (!is.na(rxcui)) {
       rx_get_json(paste0("/rxcui/", rxcui, "/properties"))
-    else NULL
+    } else {
+      NULL
+    }
 
     tibble::tibble(
       input = term,
       type = "name",
       rxcui = rxcui,
-      name = null2na(props$properties$name),
-      tty = null2na(props$properties$tty),
-      score = suppressWarnings(as.numeric(null2na(c$score))),
-      matched_term = null2na(c$name)
+      name = rx_scalar_chr(rx_pluck_chr(props, "properties", "name")),
+      tty = rx_scalar_chr(rx_pluck_chr(props, "properties", "tty")),
+      score = suppressWarnings(as.numeric(rx_scalar_chr(rx_pluck_chr(c, "score")))),
+      matched_term = rx_scalar_chr(rx_pluck_chr(c, "name"))
     )
   })
 
@@ -102,17 +110,40 @@ resolve_name <- function(term, max_entries = 1) {
 #' @noRd
 resolve_ndc <- function(ndc) {
   ndc_norm <- ndc_to_11(ndc)
+
+  if (is.na(ndc_norm) || !nzchar(ndc_norm)) {
+    return(
+      tibble::tibble(
+        input = ndc,
+        type = "ndc",
+        ndc11 = NA_character_,
+        rxcui = NA_character_,
+        name = NA_character_,
+        tty = NA_character_,
+        score = NA_real_,
+        matched_term = NA_character_
+      )
+    )
+  }
+
   res <- rx_get_json("/rxcui", query = list(idtype = "NDC", id = ndc_norm))
-  rx <- res$idGroup$rxnormId
-  rxcui <- if (length(rx)) as.character(rx[[1]]) else NA_character_
-  props <- if (!is.na(rxcui)) rx_get_json(paste0("/rxcui/", rxcui, "/properties")) else NULL
+
+  rx <- rx_pluck_chr(res, "idGroup", "rxnormId")
+  rxcui <- rx_scalar_chr(rx)
+
+  props <- if (!is.na(rxcui)) {
+    rx_get_json(paste0("/rxcui/", rxcui, "/properties"))
+  } else {
+    NULL
+  }
+
   tibble::tibble(
     input = ndc,
     type = "ndc",
     ndc11 = ndc_norm,
     rxcui = rxcui,
-    name = null2na(props$properties$name),
-    tty  = null2na(props$properties$tty),
+    name = rx_scalar_chr(rx_pluck_chr(props, "properties", "name")),
+    tty  = rx_scalar_chr(rx_pluck_chr(props, "properties", "tty")),
     score = NA_real_,
     matched_term = NA_character_
   )
@@ -122,12 +153,13 @@ resolve_ndc <- function(ndc) {
 #' @noRd
 resolve_rxcui <- function(rxcui) {
   props <- rx_get_json(paste0("/rxcui/", rxcui, "/properties"))
+
   tibble::tibble(
     input = rxcui,
     type = "rxcui",
     rxcui = rxcui,
-    name = null2na(props$properties$name),
-    tty = null2na(props$properties$tty),
+    name = rx_scalar_chr(rx_pluck_chr(props, "properties", "name")),
+    tty = rx_scalar_chr(rx_pluck_chr(props, "properties", "tty")),
     score = NA_real_,
     matched_term = NA_character_
   )

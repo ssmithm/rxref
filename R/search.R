@@ -32,20 +32,20 @@ find_ingredients <- function(
         query = list(term = t, maxEntries = max_entries)
       )
 
-      cand <- approx$approximateGroup$candidate
+      cand <- rx_pluck_list(approx, "approximateGroup", "candidate")
 
-      if (is.null(cand) || !length(cand)) {
+      if (!length(cand)) {
         return(tibble::tibble(
-          input = t,
-          rxcui = NA_character_,
-          name = NA_character_,
-          tty = NA_character_,
-          score = NA_real_
+          input = character(),
+          rxcui = character(),
+          name = character(),
+          tty = character(),
+          score = numeric()
         ))
       }
 
       rows <- purrr::map_dfr(cand, function(c) {
-        id <- null2na(c$rxcui)
+        id <- rx_scalar_chr(rx_pluck_chr(c, "rxcui"))
 
         pr <- if (!is.na(id)) {
           rx_get_json(paste0("/rxcui/", id, "/properties"))
@@ -56,9 +56,9 @@ find_ingredients <- function(
         tibble::tibble(
           input = t,
           rxcui = id,
-          name = null2na(pr$properties$name),
-          tty = null2na(pr$properties$tty),
-          score = suppressWarnings(as.numeric(null2na(c$score)))
+          name = rx_scalar_chr(rx_pluck_chr(pr, "properties", "name")),
+          tty = rx_scalar_chr(rx_pluck_chr(pr, "properties", "tty")),
+          score = suppressWarnings(as.numeric(rx_scalar_chr(rx_pluck_chr(c, "score"))))
         )
       })
 
@@ -78,34 +78,86 @@ find_ingredients <- function(
 #' Expand ingredient CUIs to product CUIs that truly contain the ingredient
 #'
 #' Tries multiple RxNav endpoints and verifies candidates truly contain the
-#' queried ingredient (or its PIN children). Handles cases where TTY appears
-#' only at the group level. Unions candidates from all sources.
+#' queried ingredient or one of its acceptable related ingredient concepts.
+#' The function unions candidates from multiple sources, verifies ingredient
+#' containment, and reports the number of ingredients represented by each
+#' product concept.
 #'
 #' @param ingredient_rxcui Character vector of ingredient CUIs (TTY `IN` or `PIN`).
-#' @param ttys Character vector of TTYs to include (default: product-facing
-#'   `c("SCD","SBD","GPCK","BPCK")`). Pass a larger set if you want groups,
-#'   components, names, etc. (e.g., `c(.rxref_default_ttys, .rxref_extended_ttys)`).
+#' @param ttys Character vector of TTYs to include. Defaults to product-facing
+#'   TTYs returned by [product_ttys()]. Pass a larger set if you want groups,
+#'   components, branded concepts, or other product-related concepts, for example
+#'   `product_ttys("extended_product")`.
 #' @param route Optional character vector of routes to retain. If `NULL`, no
 #'   route filtering is performed. Route filtering uses [get_clinical_attributes()].
-#'   Note that route is intended for product-level TTYs (see `.rxref_default_ttys`)
-#'   and may not filter well on other TTYs such as those in `.rxref_extended_ttys`.
-#' @param include_combos Logical; if `FALSE`, keep only single-ingredient
-#'   products (counting distinct `IN`; if none present, falls back to distinct `PIN`).
-#' @param show_progress Logical. Show a progress bar in interactive sessions.
+#'   Route filtering is intended for product-level TTYs and may not filter well
+#'   on broader group or package TTYs.
+#' @param include_combos Logical. If `FALSE`, keep only single-ingredient
+#'   products, where ingredient count is based on distinct `IN` concepts when
+#'   available and otherwise falls back to distinct `PIN` concepts.
+#' @param concept_status Character. Which RxNorm concept universe to search.
+#'   `"active"` uses active-scope RxNav relationship endpoints and is the
+#'   default. `"active_and_historical"` also searches historical RxNorm concepts
+#'   using all-status concept retrieval and RxCUI history status metadata.
+#'   Historical searching is slower and is intended for mapping older
+#'   prescribing or dispensing data.
+#' @param historical_status Character vector of historical RxNorm statuses to
+#'   include when `concept_status = "active_and_historical"`. Defaults to
+#'   `c("Obsolete", "Remapped", "Quantified", "NotCurrent")`. These values use
+#'   RxNorm status definitions:
+#'   \describe{
+#'     \item{`"Obsolete"`}{The concept is obsolete in the current RxNorm data set,
+#'       and RxNorm has not designated an active concept as equivalent.}
+#'     \item{`"Remapped"`}{The concept was active or obsolete at one time, is no
+#'       longer in the current data set, and has been remapped to one or more
+#'       active or obsolete concepts.}
+#'     \item{`"Quantified"`}{The concept has been designated as non-dispensable
+#'       because it lacks a quantity factor; related concepts with quantity
+#'       factors may be available.}
+#'     \item{`"NotCurrent"`}{The concept either exists in the current data set
+#'       without RxNorm vocabulary terms, or existed in a previous monthly
+#'       release but has since been removed and not remapped.}
+#'   }
+#'   See the RxNorm API documentation for concept status values:
+#'   \url{https://lhncbc.nlm.nih.gov/RxNav/APIs/api-RxNorm.getAllConceptsByStatus.html}.
+#' @param show_progress Logical. Show progress bars for long-running API
+#'   retrieval, product matching, and optional route filtering steps. Defaults
+#'   to `interactive()`.
 #'
-#' @return Tibble with columns: `ingredient_rxcui`, `product_rxcui`, `name`, `tty`, `n_ingredients`.
+#' @return A tibble with one row per matched ingredient/product concept pair.
+#'   For `concept_status = "active"`, columns include `ingredient_rxcui`,
+#'   `product_rxcui`, `name`, `tty`, and `n_ingredients`. When
+#'   `concept_status = "active_and_historical"`, additional columns include
+#'   `concept_status`, `active_start_date`, `active_end_date`,
+#'   `release_start_date`, and `release_end_date`.
 #'
 #' @export
 products_for_ingredients <- function(ingredient_rxcui,
                                      ttys = .rxref_default_ttys,
                                      route = NULL,
                                      include_combos = TRUE,
+                                     concept_status = c("active", "active_and_historical"),
+                                     historical_status = c("Obsolete", "Remapped", "Quantified", "NotCurrent"),
                                      show_progress = interactive()) {
-  stopifnot(is.character(ingredient_rxcui), is.character(ttys), length(ttys) >= 1)
+
+  concept_status <- match.arg(concept_status)
+
+  include_historical <- identical(concept_status, "active_and_historical")
+
+  stopifnot(
+    is.character(ingredient_rxcui),
+    is.character(ttys),
+    length(ttys) >= 1,
+    is.character(historical_status)
+  )
+
   tty_vec <- unique(ttys)
+  historical_status <- unique(historical_status)
+
+  ingredient_ids <- unique(stats::na.omit(ingredient_rxcui))
 
   # helper: safe scalarization
-  nz1 <- function(x) if (is.null(x) || length(x) == 0) NA_character_ else as.character(x)
+  nz1 <- function(x) rx_scalar_chr(x)
 
   # helper: collect concepts, using group tty when concept tty is missing
   collect_concepts <- function(groups, allowed_ttys) {
@@ -116,6 +168,7 @@ products_for_ingredients <- function(ingredient_rxcui,
         tty  = character()
       ))
     }
+
     rows <- purrr::map_dfr(groups, function(grp) {
       grp_tty <- nz1(grp$tty)
       cps <- grp$conceptProperties
@@ -154,19 +207,27 @@ products_for_ingredients <- function(ingredient_rxcui,
   # acceptance set: input IN + its PIN children; also a loose name pattern
   acceptance_for_ing <- function(ing) {
     pr <- tryCatch(rx_get_json(paste0("/rxcui/", ing, "/properties")), error = function(e) NULL)
-    ing_name <- tolower(nz1(pr$properties$name))
-    base_token <- sub("\\s+.*$", "", ing_name)
-    base_pat   <- paste0("\\b", gsub("([\\W_])", "\\\\\\1", base_token), "\\b")
+    ing_name <- tolower(rx_scalar_chr(rx_pluck_chr(pr, "properties", "name")))
+
+    if (is.na(ing_name) || !nzchar(ing_name)) {
+      base_pat <- "a^"
+    } else {
+      base_token <- sub("\\s+.*$", "", ing_name)
+      base_pat <- paste0("\\b", gsub("([\\W_])", "\\\\\\1", base_token), "\\b")
+    }
 
     pins <- character(0)
-    tty_self <- nz1(pr$properties$tty)
+    tty_self <- rx_scalar_chr(rx_pluck_chr(pr, "properties", "tty"))
     if (!identical(tty_self, "PIN")) {
       rel <- tryCatch(
         rx_get_json(paste0("/rxcui/", ing, "/related"),
                     query = list(tty = "PIN", rela = "has_precise_ingredient")),
         error = function(e) NULL
       )
-      pins_tbl <- collect_concepts(rel$relatedGroup$conceptGroup, "PIN")
+      pins_tbl <- collect_concepts(
+        rx_pluck_list(rel, "relatedGroup", "conceptGroup"),
+        "PIN"
+      )
       pins <- pins_tbl$product_rxcui
     }
     list(cui_ok = unique(c(ing, pins)), name_pat = base_pat)
@@ -179,7 +240,7 @@ products_for_ingredients <- function(ingredient_rxcui,
                   query = list(tty = tty_vec, rela = "ingredient_of")),
       error = function(e) NULL
     )
-    collect_concepts(rel$relatedGroup$conceptGroup, tty_vec)
+    collect_concepts(rx_pluck_list(rel, "relatedGroup", "conceptGroup"), tty_vec)
   }
   fetch_via_related <- function(ing) {
     rel <- tryCatch(
@@ -187,65 +248,351 @@ products_for_ingredients <- function(ingredient_rxcui,
                   query = list(tty = tty_vec)),
       error = function(e) NULL
     )
-    collect_concepts(rel$relatedGroup$conceptGroup, tty_vec)
+    collect_concepts(rx_pluck_list(rel, "relatedGroup", "conceptGroup"), tty_vec)
   }
   fetch_via_allrelated <- function(ing) {
-    rel <- tryCatch(rx_get_json(paste0("/rxcui/", ing, "/allrelated")), error = function(e) NULL)
-    collect_concepts(rel$allRelatedGroup$conceptGroup, tty_vec)
+    rel <- tryCatch(
+      rx_get_json(paste0("/rxcui/", ing, "/allrelated")),
+      error = function(e) NULL
+    )
+
+    collect_concepts(
+      rx_pluck_list(rel, "allRelatedGroup", "conceptGroup"),
+      tty_vec
+    )
   }
   fetch_via_drugs_name <- function(ing) {
-    props <- tryCatch(rx_get_json(paste0("/rxcui/", ing, "/properties")), error = function(e) NULL)
-    nm <- nz1(props$properties$name)
+    props <- tryCatch(
+      rx_get_json(paste0("/rxcui/", ing, "/properties")),
+      error = function(e) NULL
+    )
+
+    nm <- rx_scalar_chr(rx_pluck_chr(props, "properties", "name"))
+
     if (is.na(nm) || !nzchar(nm)) {
-      return(tibble::tibble(product_rxcui = character(), name = character(), tty = character()))
+      return(tibble::tibble(
+        product_rxcui = character(),
+        name = character(),
+        tty = character()
+      ))
     }
-    dg <- tryCatch(rx_get_json("/drugs", query = list(name = nm)), error = function(e) NULL)
-    collect_concepts(dg$drugGroup$conceptGroup, tty_vec)
+
+    dg <- tryCatch(
+      rx_get_json("/drugs", query = list(name = nm)),
+      error = function(e) NULL
+    )
+
+    collect_concepts(
+      rx_pluck_list(dg, "drugGroup", "conceptGroup"),
+      tty_vec
+    )
+  }
+
+  fetch_allstatus_products <- function() {
+    .rxref_progress_map_dfr(
+      historical_status,
+      function(status) {
+        res <- tryCatch(
+          rx_get_json("/allstatus", query = list(status = status)),
+          error = function(e) NULL
+        )
+
+        concepts <- rx_pluck_list(res, "minConceptGroup", "minConcept")
+        concepts <- as_rx_records(concepts)
+
+        if (!length(concepts)) {
+          return(tibble::tibble(
+            product_rxcui = character(),
+            name = character(),
+            tty = character(),
+            concept_status = character()
+          ))
+        }
+
+        purrr::map_dfr(concepts, function(cp) {
+          tibble::tibble(
+            product_rxcui = nz1(cp$rxcui),
+            name = nz1(cp$name),
+            tty = nz1(cp$tty),
+            concept_status = status
+          )
+        })
+      },
+      name = "Fetching historical products from RxNorm",
+      show_progress = show_progress,
+      min_n = 1L
+    ) |>
+      dplyr::filter(
+        !is.na(.data$product_rxcui),
+        !is.na(.data$name),
+        !is.na(.data$tty),
+        .data$tty %in% tty_vec
+      ) |>
+      dplyr::distinct()
+  }
+
+  filter_allstatus_name <- function(allstatus_products, name_pat) {
+    if (identical(name_pat, "a^") || !nrow(allstatus_products)) {
+      return(tibble::tibble(
+        product_rxcui = character(),
+        name = character(),
+        tty = character(),
+        concept_status = character()
+      ))
+    }
+
+    allstatus_products |>
+      dplyr::filter(grepl(name_pat, tolower(.data$name), perl = TRUE)) |>
+      dplyr::distinct()
   }
 
   # verify that product lists the ingredient (IN/PIN) by CUI or name
   verify_contains <- function(prod_rxcui, cui_ok, name_pat) {
     rel_ing <- tryCatch(
-      rx_get_json(paste0("/rxcui/", prod_rxcui, "/related"),
-                  query = list(tty = c("IN","PIN"))),
+      rx_get_json(
+        paste0("/rxcui/", prod_rxcui, "/related"),
+        query = list(tty = c("IN", "PIN"))
+      ),
       error = function(e) NULL
     )
-    gs <- rel_ing$relatedGroup$conceptGroup
+
+    gs <- rx_pluck_list(rel_ing, "relatedGroup", "conceptGroup")
+
     if (is.null(gs) || !length(gs)) {
-      return(tibble::tibble(product_rxcui = prod_rxcui, n_ingredients = 0L, contains = FALSE))
+      return(tibble::tibble(
+        product_rxcui = prod_rxcui,
+        n_ingredients = NA_integer_,
+        contains = FALSE
+      ))
     }
+
     ings <- purrr::map_dfr(gs, function(grp) {
-      cps <- grp$conceptProperties
-      if (is.null(cps)) return(tibble::tibble())
+      cps <- rx_pluck_list(grp, "conceptProperties")
+
+      if (is.null(cps)) {
+        return(tibble::tibble())
+      }
+
       purrr::map_dfr(cps, function(z) {
         tibble::tibble(
-          rxcui = as.character(z$rxcui),
-          tty   = nz1(z$tty),
-          name  = tolower(nz1(z$name))
+          rxcui = nz1(z$rxcui),
+          tty = nz1(z$tty),
+          name = tolower(nz1(z$name))
         )
       })
     }) |>
-      dplyr::filter(.data$tty %in% c("IN","PIN")) |>
-      dplyr::distinct()
+      dplyr::filter(.data$tty %in% c("IN", "PIN")) |>
+      dplyr::filter(!is.na(.data$rxcui) | !is.na(.data$name)) |>
+      dplyr::mutate(
+        ingredient_key = dplyr::coalesce(
+          .data$rxcui,
+          .data$name
+        )
+      ) |>
+      dplyr::filter(!is.na(.data$ingredient_key), nzchar(.data$ingredient_key)) |>
+      dplyr::distinct(.data$tty, .data$ingredient_key, .keep_all = TRUE)
 
-    n_in  <- ings |> dplyr::filter(.data$tty == "IN")  |> dplyr::distinct(.data$rxcui) |> nrow()
-    n_pin <- ings |> dplyr::filter(.data$tty == "PIN") |> dplyr::distinct(.data$rxcui) |> nrow()
+    n_in <- ings |>
+      dplyr::filter(.data$tty == "IN") |>
+      dplyr::distinct(.data$ingredient_key) |>
+      nrow()
+
+    n_pin <- ings |>
+      dplyr::filter(.data$tty == "PIN") |>
+      dplyr::distinct(.data$ingredient_key) |>
+      nrow()
+
     n_total <- if (n_in > 0L) n_in else n_pin
 
-    contains <- any(ings$rxcui %in% cui_ok) || any(grepl(name_pat, ings$name, perl = TRUE))
+    if (n_total == 0L) {
+      n_total <- NA_integer_
+    }
 
-    tibble::tibble(product_rxcui = prod_rxcui, n_ingredients = as.integer(n_total), contains = contains)
+    contains <- any(ings$rxcui %in% cui_ok, na.rm = TRUE) ||
+      any(grepl(name_pat, ings$name, perl = TRUE), na.rm = TRUE)
+
+    tibble::tibble(
+      product_rxcui = prod_rxcui,
+      n_ingredients = as.integer(n_total),
+      contains = contains
+    )
+  }
+
+  verify_contains_historical <- function(prod_rxcui, cui_ok, name_pat) {
+    hs <- tryCatch(
+      rx_get_json(paste0("/rxcui/", prod_rxcui, "/historystatus")),
+      error = function(e) NULL
+    )
+
+    x <- rx_pluck_list(hs, "rxcuiStatusHistory")
+
+    if (is.null(x) || !length(x)) {
+      return(tibble::tibble(
+        product_rxcui = prod_rxcui,
+        n_ingredients = NA_integer_,
+        contains = FALSE,
+        concept_status = NA_character_,
+        active_start_date = NA_character_,
+        active_end_date = NA_character_,
+        release_start_date = NA_character_,
+        release_end_date = NA_character_
+      ))
+    }
+
+    meta <- x$metaData
+    attrs <- x$attributes
+    defs <- x$definitionalFeatures
+    derived <- x$derivedConcepts
+
+    empty_hist_ings <- function() {
+      tibble::tibble(
+        rxcui = character(),
+        name = character()
+      )
+    }
+
+    ing_strength <- as_rx_records(
+      defs$ingredientAndStrength,
+      id_field = "baseRxcui"
+    )
+
+    # Canonical fallback ingredients from ingredientAndStrength.
+    # These may contribute to n_ingredients.
+    strength_base_ings <- if (!length(ing_strength)) {
+      empty_hist_ings()
+    } else {
+      purrr::map_dfr(ing_strength, function(z) {
+        tibble::tibble(
+          rxcui = nz1(z$baseRxcui),
+          name = tolower(nz1(z$baseName))
+        )
+      })
+    }
+
+    # Broader ingredient-related concepts from ingredientAndStrength.
+    # These are useful for confirming containment, but are not counted
+    # as separate ingredients.
+    strength_match_ings <- if (!length(ing_strength)) {
+      empty_hist_ings()
+    } else {
+      purrr::map_dfr(ing_strength, function(z) {
+        tibble::tibble(
+          rxcui = c(
+            nz1(z$baseRxcui),
+            nz1(z$bossRxcui),
+            nz1(z$activeIngredientRxcui),
+            nz1(z$moietyRxcui)
+          ),
+          name = tolower(c(
+            nz1(z$baseName),
+            nz1(z$bossName),
+            nz1(z$activeIngredientName),
+            nz1(z$moietyName)
+          ))
+        )
+      })
+    }
+
+    ing_concepts <- as_rx_records(
+      derived$ingredientConcept,
+      id_field = "ingredientRxcui"
+    )
+
+    # Preferred canonical ingredient source.
+    derived_ings <- if (!length(ing_concepts)) {
+      empty_hist_ings()
+    } else {
+      purrr::map_dfr(ing_concepts, function(z) {
+        tibble::tibble(
+          rxcui = nz1(z$ingredientRxcui),
+          name = tolower(nz1(z$ingredientName))
+        )
+      })
+    }
+
+    # Count canonical ingredients only.
+    # Prefer derived ingredientConcept when available; fall back to base
+    # ingredientAndStrength concepts otherwise.
+    count_ings <- if (nrow(derived_ings)) {
+      derived_ings
+    } else {
+      strength_base_ings
+    }
+
+    count_ings <- count_ings |>
+      dplyr::filter(!is.na(.data$rxcui) | !is.na(.data$name)) |>
+      dplyr::mutate(
+        ingredient_key = dplyr::coalesce(
+          .data$rxcui,
+          .data$name
+        )
+      ) |>
+      dplyr::filter(!is.na(.data$ingredient_key), nzchar(.data$ingredient_key)) |>
+      dplyr::distinct(.data$ingredient_key, .keep_all = TRUE)
+
+    # Use the broader table only for containment verification.
+    match_ings <- dplyr::bind_rows(
+      derived_ings,
+      strength_base_ings,
+      strength_match_ings
+    ) |>
+      dplyr::filter(!is.na(.data$rxcui) | !is.na(.data$name)) |>
+      dplyr::distinct()
+
+    n_total <- nrow(count_ings)
+
+    if (n_total == 0L) {
+      n_total <- NA_integer_
+    }
+
+    contains <- any(match_ings$rxcui %in% cui_ok, na.rm = TRUE) ||
+      any(grepl(name_pat, match_ings$name, perl = TRUE), na.rm = TRUE)
+
+    tibble::tibble(
+      product_rxcui = prod_rxcui,
+      n_ingredients = as.integer(n_total),
+      contains = contains,
+      concept_status = nz1(meta$status),
+      active_start_date = nz1(meta$activeStartDate),
+      active_end_date = nz1(meta$activeEndDate),
+      release_start_date = nz1(meta$releaseStartDate),
+      release_end_date = nz1(meta$releaseEndDate)
+    )
+  }
+
+  allstatus_products <- if (isTRUE(include_historical)) {
+    fetch_allstatus_products()
+  } else {
+    tibble::tibble(
+      product_rxcui = character(),
+      name = character(),
+      tty = character(),
+      concept_status = character()
+    )
   }
 
   out <- .rxref_progress_map_dfr(
-    ingredient_rxcui,
+    ingredient_ids,
     function(ing) {
+      ## orig.
+      acc <- acceptance_for_ing(ing)
       cand_rela <- fetch_via_rela(ing)
       cand_related <- fetch_via_related(ing)
       cand_allrel <- fetch_via_allrelated(ing)
       cand_drugs <- fetch_via_drugs_name(ing)
 
-      prods <- dplyr::bind_rows(
+      hist_prods <- if (isTRUE(include_historical)) {
+        filter_allstatus_name(allstatus_products, acc$name_pat)
+      } else {
+        tibble::tibble(
+          product_rxcui = character(),
+          name = character(),
+          tty = character(),
+          concept_status = character()
+        )
+      }
+
+      active_prods <- dplyr::bind_rows(
         cand_rela,
         cand_related,
         cand_allrel,
@@ -253,36 +600,81 @@ products_for_ingredients <- function(ingredient_rxcui,
       ) |>
         dplyr::distinct()
 
+      prods <- dplyr::bind_rows(
+        dplyr::mutate(active_prods, concept_status = "Active"),
+        hist_prods
+      ) |>
+        dplyr::distinct()
+
       if (!nrow(prods)) {
-        return(tibble::tibble(
-          ingredient_rxcui = character(),
-          product_rxcui = character(),
-          name = character(),
-          tty = character(),
-          n_ingredients = integer()
+        return(empty_products(
+          include_history_cols = isTRUE(include_historical)
         ))
       }
 
-      acc <- acceptance_for_ing(ing)
+      active_ids <- prods |>
+        dplyr::filter(.data$concept_status == "Active") |>
+        dplyr::pull(.data$product_rxcui) |>
+        unique()
 
-      chk <- purrr::map_dfr(
-        prods$product_rxcui,
+      historical_ids <- prods |>
+        dplyr::filter(.data$concept_status != "Active") |>
+        dplyr::pull(.data$product_rxcui) |>
+        unique()
+
+      chk_active <- purrr::map_dfr(
+        active_ids,
         verify_contains,
+        cui_ok = acc$cui_ok,
+        name_pat = acc$name_pat
+      ) |>
+        dplyr::mutate(
+          concept_status = "Active",
+          active_start_date = NA_character_,
+          active_end_date = NA_character_,
+          release_start_date = NA_character_,
+          release_end_date = NA_character_
+        )
+
+      chk_historical <- purrr::map_dfr(
+        historical_ids,
+        verify_contains_historical,
         cui_ok = acc$cui_ok,
         name_pat = acc$name_pat
       )
 
+      chk <- dplyr::bind_rows(chk_active, chk_historical)
+
       out_ <- prods |>
+        dplyr::select(-dplyr::any_of("concept_status")) |>
         dplyr::left_join(chk, by = "product_rxcui") |>
         dplyr::filter(.data$contains %in% TRUE) |>
-        dplyr::mutate(ingredient_rxcui = ing) |>
-        dplyr::select(
-          .data$ingredient_rxcui,
-          .data$product_rxcui,
-          .data$name,
-          .data$tty,
-          .data$n_ingredients
-        )
+        dplyr::mutate(ingredient_rxcui = ing)
+
+      if (isTRUE(include_historical)) {
+        out_ <- out_ |>
+          dplyr::select(dplyr::all_of(c(
+            "ingredient_rxcui",
+            "product_rxcui",
+            "name",
+            "tty",
+            "n_ingredients",
+            "concept_status",
+            "active_start_date",
+            "active_end_date",
+            "release_start_date",
+            "release_end_date"
+          )))
+      } else {
+        out_ <- out_ |>
+          dplyr::select(dplyr::all_of(c(
+            "ingredient_rxcui",
+            "product_rxcui",
+            "name",
+            "tty",
+            "n_ingredients"
+          )))
+      }
 
       if (!isTRUE(include_combos)) {
         out_ <- dplyr::filter(out_, .data$n_ingredients <= 1L)
@@ -290,7 +682,7 @@ products_for_ingredients <- function(ingredient_rxcui,
 
       out_
     },
-    name = "Finding products",
+    name = "Matching products to ingredients",
     show_progress = show_progress
   ) |>
     dplyr::distinct()
@@ -299,6 +691,7 @@ products_for_ingredients <- function(ingredient_rxcui,
     out <- filter_products_by_route(
       out,
       route = route,
+      include_historical = isTRUE(include_historical),
       show_progress = show_progress
     )
   }
@@ -369,11 +762,10 @@ search_drug <- function(term,
   prods <- products_for_ingredients(
     ing_ids,
     ttys = ttys,
+    route = route,
     show_progress = show_progress,
-    ...)
-  if (!is.null(route)) {
-    prods <- filter_products_by_route(prods, route = route)
-  }
+    ...
+  )
   if (return == "rxcui") return(prods)
 
   # Only product-ish TTYs cleanly map to NDCs
@@ -392,6 +784,7 @@ search_drug <- function(term,
     status = ndc_status,
     show_progress = show_progress
   ) |>
+    dplyr::filter(!is.na(.data$ndc11)) |>
     dplyr::mutate(product_rxcui = .data$rxcui) |>
     dplyr::select(.data$product_rxcui, .data$ndc11, dplyr::any_of("ndc_status")) |>
     dplyr::left_join(
@@ -429,8 +822,10 @@ ingredients_for_rxcui <- function(
 ) {
   stopifnot(is.character(rxcui))
 
+  rxcui_ids <- unique(stats::na.omit(rxcui))
+
   .rxref_progress_map_dfr(
-    rxcui,
+    rxcui_ids,
     function(x) {
       .rxref_get_ingredients_for_rxcui(
         x,
@@ -442,4 +837,56 @@ ingredients_for_rxcui <- function(
     show_progress = show_progress
   ) |>
     dplyr::rename(rxcui = "related_rxcui")
+}
+
+#' Normalize RxNav records to a list of records
+#'
+#' RxNav sometimes returns repeated elements as a list of lists, but when there
+#' is only one result it may return a single named list. This helper normalizes
+#' both cases to a list of records.
+#'
+#' @keywords internal
+#' @noRd
+as_rx_records <- function(x, id_field = "rxcui") {
+  if (is.null(x) || !length(x)) {
+    return(list())
+  }
+
+  if (is.data.frame(x)) {
+    return(split(x, seq_len(nrow(x))))
+  }
+
+  if (is.list(x) && !is.null(x[[id_field]])) {
+    return(list(x))
+  }
+
+  x
+}
+
+
+#' Empty products tibble
+#'
+#' @keywords internal
+#' @noRd
+empty_products <- function(include_history_cols = FALSE) {
+  out <- tibble::tibble(
+    ingredient_rxcui = character(),
+    product_rxcui = character(),
+    name = character(),
+    tty = character(),
+    n_ingredients = integer()
+  )
+
+  if (isTRUE(include_history_cols)) {
+    out <- dplyr::mutate(
+      out,
+      concept_status = character(),
+      active_start_date = character(),
+      active_end_date = character(),
+      release_start_date = character(),
+      release_end_date = character()
+    )
+  }
+
+  out
 }
