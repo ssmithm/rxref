@@ -2,8 +2,8 @@
 
 ### All vignettes
 
-- [Case Study: GLP1 receptor
-  agonists](https://www.stevenmsmith.org/rxref/articles/case_study_glp1ra.md):
+- [Case Study: GLP-1 and related incretin
+  therapies](https://www.stevenmsmith.org/rxref/articles/case_study_glp1ra.md):
 - [Building route-specific RxCUI and NDC
   lists](https://www.stevenmsmith.org/rxref/articles/route_specific_lists.md):
 - [rxref: Getting

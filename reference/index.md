@@ -89,8 +89,15 @@ strength, dose form, route, and route-specific product filtering.
 
 - [`get_clinical_attributes()`](https://www.stevenmsmith.org/rxref/reference/get_clinical_attributes.md)
   : Clinical attributes from the concept (SCD/SBD) or related SCD/SBD
+
+## Product filtering
+
+Fine-tuned filtering of product RxCUI lists.
+
 - [`filter_products_by_route()`](https://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md)
   : Filter RxNorm product concepts by route of administration.
+- [`exclude_products_with_ingredients()`](https://www.stevenmsmith.org/rxref/reference/exclude_products_with_ingredients.md)
+  : Exclude products containing specified ingredients
 
 ## Concept type helpers
 

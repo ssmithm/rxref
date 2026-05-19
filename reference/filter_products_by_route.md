@@ -13,6 +13,7 @@ filter_products_by_route(
   products,
   route = "ORAL",
   keep_route_info = TRUE,
+  include_historical = FALSE,
   show_progress = interactive()
 )
 ```
@@ -35,6 +36,15 @@ filter_products_by_route(
   Logical. If `TRUE` (default), append route, dose form, and dose-form
   group summaries to the returned table.
 
+- include_historical:
+
+  Logical. If `TRUE`, use RxCUI history status metadata as a fallback
+  for RxCUIs that do not return active clinical attributes. This is
+  useful for obsolete, remapped, quantified, or otherwise non-current
+  RxCUIs found in historical prescribing data. If `products` contains a
+  `concept_status` column with non-`"active"` value, historical lookup
+  is enabled automatically.
+
 - show_progress:
 
   Logical. Show a progress bar in interactive sessions. Progress is
@@ -48,7 +58,7 @@ matching route.
 ## Examples
 
 ``` r
-# \donttest{
+if (FALSE) { # \dontrun{
 ing <- find_ingredients("metoprolol")
 
 prods <- products_for_ingredients(
@@ -57,20 +67,14 @@ prods <- products_for_ingredients(
 )
 
 filter_products_by_route(prods, route = "ORAL")
-#> # A tibble: 34 × 8
-#>    ingredient_rxcui product_rxcui name     tty   n_ingredients routes dose_forms
-#>    <chr>            <chr>         <chr>    <chr>         <int> <chr>  <chr>     
-#>  1 6918             2047766       24 HR m… SBD               1 ORAL   Extended …
-#>  2 6918             2047769       24 HR m… SBD               1 ORAL   Extended …
-#>  3 6918             2047772       24 HR m… SBD               1 ORAL   Extended …
-#>  4 6918             2047775       24 HR m… SBD               1 ORAL   Extended …
-#>  5 6918             2712152       metopro… SBD               1 ORAL   Oral Solu…
-#>  6 6918             2723027       metopro… SBD               1 ORAL   Oral Tabl…
-#>  7 6918             866414        24 HR m… SBD               1 ORAL   Extended …
-#>  8 6918             866421        24 HR m… SBD               1 ORAL   Extended …
-#>  9 6918             866429        24 HR m… SBD               1 ORAL   Extended …
-#> 10 6918             866438        24 HR m… SBD               1 ORAL   Extended …
-#> # ℹ 24 more rows
-#> # ℹ 1 more variable: dose_form_groups <chr>
-# }
+
+# Historical/current products can also be route-filtered
+prods_hist <- products_for_ingredients(
+  ing$rxcui,
+  include_combos = TRUE,
+  concept_status = "active_and_historical"
+)
+
+filter_products_by_route(prods_hist, route = "ORAL")
+} # }
 ```

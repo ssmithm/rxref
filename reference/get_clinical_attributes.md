@@ -7,7 +7,11 @@ attributes directly from its own name. Otherwise, query
 ## Usage
 
 ``` r
-get_clinical_attributes(rxcui, show_progress = interactive())
+get_clinical_attributes(
+  rxcui,
+  include_historical = FALSE,
+  show_progress = interactive()
+)
 ```
 
 ## Arguments
@@ -15,6 +19,13 @@ get_clinical_attributes(rxcui, show_progress = interactive())
 - rxcui:
 
   Character vector of RxCUIs
+
+- include_historical:
+
+  Logical. If `TRUE`, use RxCUI history status metadata as a fallback
+  for RxCUIs that do not return active clinical attributes. This is
+  useful for obsolete, remapped, quantified, or otherwise non-current
+  RxCUIs found in historical prescribing data.
 
 - show_progress:
 
@@ -71,15 +82,18 @@ A tibble with columns:
 
 - ingredient_rxcui:
 
-  List-column of ingredient RxCUIs
+  Ingredient RxCUI. For combination products, multiple values are
+  returned as semicolon-delimited strings.
 
 - ingredient_name:
 
-  List-column of ingredient names
+  Ingredient name. For combination products, multiple values are
+  returned as semicolon-delimited strings.
 
 - ingredient_tty:
 
-  List-column of ingredient term types (IN/PIN/MIN)
+  Ingredient term type (IN/PIN/MIN). For combination products, multiple
+  values are returned as semicolon-delimited strings.
 
 - is_multi_ingredient:
 
@@ -104,17 +118,15 @@ extract relevant information (e.g., strength, dose_form), so check
 closely before trusting. There may be edge cases that are not correctly
 parsed.
 
+For combination products, ingredient-related columns may contain
+multiple semicolon-delimited values, such as `"amlodipine; valsartan"`.
+
 ## Examples
 
 ``` r
-# \donttest{
+if (FALSE) { # \dontrun{
 get_clinical_attributes(c("861007","860975")) |>
   dplyr::select(rxcui, related_rxcui, name, strength, dose_form, route, tty) |>
   head()
-#> # A tibble: 2 × 7
-#>   rxcui  related_rxcui name                       strength dose_form route tty  
-#>   <chr>  <chr>         <chr>                      <chr>    <chr>     <chr> <chr>
-#> 1 861007 861007        metformin hydrochloride 5… 500 MG   Oral Tab… ORAL  SCD  
-#> 2 860975 860975        24 HR metformin hydrochlo… 500 MG   Extended… ORAL  SCD  
-# }
+} # }
 ```
