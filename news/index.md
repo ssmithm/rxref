@@ -2,6 +2,8 @@
 
 ## rxref 0.4.0
 
+CRAN release: 2026-05-27
+
 ### New features
 
 - Added support for retrieving active and historical RxNorm product

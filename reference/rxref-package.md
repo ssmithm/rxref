@@ -51,9 +51,9 @@ Configure package behavior with
 
 Useful links:
 
-- <https://github.com/ssmithm/rxref>
-
 - <https://www.stevenmsmith.org/rxref/>
+
+- <https://github.com/ssmithm/rxref>
 
 - Report bugs at <https://github.com/ssmithm/rxref/issues>
 
