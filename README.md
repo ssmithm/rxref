@@ -5,7 +5,13 @@
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/rxref)](https://CRAN.R-project.org/package=rxref)
+[![CRAN
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/rxref)](https://cran.r-project.org/package=rxref)
 [![R-CMD-check](https://github.com/ssmithm/rxref/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ssmithm/rxref/actions/workflows/R-CMD-check.yaml)
+[![Lifecycle:
+stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 <!-- badges: end -->
 
 **rxref** is an R package for working with medication identifiers from
@@ -15,15 +21,15 @@ expanding ingredients to product concepts, mapping between RxCUIs and
 NDCs, retrieving clinical product attributes, and querying selected drug
 class relationships.
 
-The package is designed for pharmacoepidemiologic and health services
+The package was designed for pharmacoepidemiologic and health services
 research workflows where medication exposure definitions often need to
 move between ingredient names, RxNorm concepts, National Drug Codes
 (NDCs), routes, dose forms, and therapeutic classes.
 
-**rxref** was originally built to support pharmacoepidemiologic research
-in the [UF CVmedLab](https://cvmedlab.org/), where we often need
-reproducible, transparent medication definitions for prescriptions,
-pharmacy dispensings, and claims-based drug exposure measures.
+**rxref** was originally built to support the [UF
+CVmedLab](https://cvmedlab.org/), where we often need reproducible,
+transparent medication definitions for prescriptions, pharmacy
+dispensings, and claims-based drug exposure measures.
 
 ## What rxref can do
 
@@ -47,12 +53,18 @@ Common workflows include:
 
 ## Installation
 
+You can install the released version of `rxref` from CRAN:
+
+``` r
+install.packages("rxref")
+```
+
 You can install the development version of `rxref` from
 [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("pak")
-# pak::pak("ssmithm/rxref")
+pak::pak("ssmithm/rxref")
 ```
 
 ## Basic Workflow: ingredients to products
@@ -409,3 +421,11 @@ intermediate drug-definition outputs used in analyses.
 medication-definition development. Users should review outputs carefully
 before using them in any high-stakes regulatory, clinical, or production
 settings.
+
+## Funding
+
+Development of `rxref` was supported in part by the U.S. National Heart,
+Lung and Blood Institute (NHLBI), grants K01HL138172 and R01HL171387.
+The content is solely the responsibility of the author and does not
+necessarily represent the official views of the National Institutes of
+Health.

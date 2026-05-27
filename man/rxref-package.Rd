@@ -33,8 +33,8 @@ Configure package behavior with \code{\link[=rxref_conf]{rxref_conf()}}.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/ssmithm/rxref}
   \item \url{https://www.stevenmsmith.org/rxref/}
+  \item \url{https://github.com/ssmithm/rxref}
   \item Report bugs at \url{https://github.com/ssmithm/rxref/issues}
 }
 

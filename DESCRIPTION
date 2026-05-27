@@ -1,5 +1,5 @@
 Package: rxref
-Title: Tidy Utilities for RxNorm and NDC Resolution
+Title: Tidy Utilities for 'RxNorm' and NDC Resolution
 Version: 0.4.0
 Authors@R:
 	c(person(
@@ -8,14 +8,15 @@ Authors@R:
 	email = "ssmith@cop.ufl.edu", 
 	role = c("aut", "cre")))
 Description: Provides a tidy, vectorized interface to the 'RxNorm' / 'RxNav'
-    API for resolving drug names, RxCUIs, National Drug Codes (NDCs), and 
-    related drug concept metadata. The package supports workflows for mapping 
-    between drug names, RxCUIs, NDCs, ingredients, products, drug classes, and 
-    related concepts using data from the National Library of Medicine's 'RxNav' 
+    API for resolving drug names, 'RxNorm' Concept Unique Identifiers (RxCUIs), 
+    National Drug Codes (NDCs), and related drug concept metadata. The package 
+    supports workflows for mapping between drug names, RxCUIs, NDCs, 
+    ingredients, products, drug classes, and related concepts using data from 
+    the U.S. National Library of Medicine's 'RxNav' 
     services <https://lhncbc.nlm.nih.gov/RxNav/APIs/> and 'RxNorm'
     <https://www.nlm.nih.gov/research/umls/rxnorm/>.
 License: MIT + file LICENSE
-URL: https://github.com/ssmithm/rxref, https://www.stevenmsmith.org/rxref/
+URL: https://www.stevenmsmith.org/rxref/, https://github.com/ssmithm/rxref
 BugReports: https://github.com/ssmithm/rxref/issues
 Depends:
 	R (>= 4.1)
