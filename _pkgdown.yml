@@ -110,6 +110,13 @@ reference:
 
 - title: "Package configuration"
   desc: >
-    Configure rxref behavior.
+    Configure rxref behavior, including API settings and memoised
+    API-response caching.
   contents:
   - rxref_conf
+  - rxref_cache
+  - rxref_cache_info
+  - rxref_cache_clear
+  - rxref_cache_use_memory
+  - rxref_cache_use_disk
+  - rxref_cache_disable
