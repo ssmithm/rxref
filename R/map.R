@@ -254,9 +254,10 @@ map_to <- function(
           # hyphenate to 5-4-2 for the status endpoint
           ndc_h <- hyphenate_ndc_5_4_2(n)
 
-          st <- tryCatch(
+          st <- rx_try_optional_api(
             rx_get_json("/ndcstatus", query = list(ndc = ndc_h)),
-            error = function(e) NULL
+            fallback = NULL,
+            context = paste0("Could not retrieve NDC status for ", ndc_h)
           )
 
           # common JSON shape: ndcStatus$status

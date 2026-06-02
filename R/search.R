@@ -206,7 +206,8 @@ products_for_ingredients <- function(ingredient_rxcui,
 
   # acceptance set: input IN + its PIN children; also a loose name pattern
   acceptance_for_ing <- function(ing) {
-    pr <- tryCatch(rx_get_json(paste0("/rxcui/", ing, "/properties")), error = function(e) NULL)
+    pr <- rx_get_json(paste0("/rxcui/", ing, "/properties"))
+
     ing_name <- tolower(rx_scalar_chr(rx_pluck_chr(pr, "properties", "name")))
 
     if (is.na(ing_name) || !nzchar(ing_name)) {
@@ -219,15 +220,20 @@ products_for_ingredients <- function(ingredient_rxcui,
     pins <- character(0)
     tty_self <- rx_scalar_chr(rx_pluck_chr(pr, "properties", "tty"))
     if (!identical(tty_self, "PIN")) {
-      rel <- tryCatch(
-        rx_get_json(paste0("/rxcui/", ing, "/related"),
-                    query = list(tty = "PIN", rela = "has_precise_ingredient")),
-        error = function(e) NULL
+      rel <- rx_try_optional_api(
+        rx_get_json(
+          paste0("/rxcui/", ing, "/related"),
+          query = list(tty = "PIN", rela = "has_precise_ingredient")
+        ),
+        fallback = NULL,
+        context = paste0("Could not retrieve precise ingredients for RxCUI ", ing)
       )
+
       pins_tbl <- collect_concepts(
         rx_pluck_list(rel, "relatedGroup", "conceptGroup"),
         "PIN"
       )
+
       pins <- pins_tbl$product_rxcui
     }
     list(cui_ok = unique(c(ing, pins)), name_pat = base_pat)
@@ -235,25 +241,42 @@ products_for_ingredients <- function(ingredient_rxcui,
 
   # fetchers that each return a tibble: product_rxcui, name, tty
   fetch_via_rela <- function(ing) {
-    rel <- tryCatch(
-      rx_get_json(paste0("/rxcui/", ing, "/related"),
-                  query = list(tty = tty_vec, rela = "ingredient_of")),
-      error = function(e) NULL
+    rel <- rx_try_optional_api(
+      rx_get_json(
+        paste0("/rxcui/", ing, "/related"),
+        query = list(tty = tty_vec, rela = "ingredient_of")
+      ),
+      fallback = NULL,
+      context = paste0("Could not retrieve ingredient_of products for RxCUI ", ing)
     )
-    collect_concepts(rx_pluck_list(rel, "relatedGroup", "conceptGroup"), tty_vec)
+
+    collect_concepts(
+      rx_pluck_list(rel, "relatedGroup", "conceptGroup"),
+      tty_vec
+    )
   }
+
   fetch_via_related <- function(ing) {
-    rel <- tryCatch(
-      rx_get_json(paste0("/rxcui/", ing, "/related"),
-                  query = list(tty = tty_vec)),
-      error = function(e) NULL
+    rel <- rx_try_optional_api(
+      rx_get_json(
+        paste0("/rxcui/", ing, "/related"),
+        query = list(tty = tty_vec)
+      ),
+      fallback = NULL,
+      context = paste0("Could not retrieve related products for RxCUI ", ing)
     )
-    collect_concepts(rx_pluck_list(rel, "relatedGroup", "conceptGroup"), tty_vec)
+
+    collect_concepts(
+      rx_pluck_list(rel, "relatedGroup", "conceptGroup"),
+      tty_vec
+    )
   }
+
   fetch_via_allrelated <- function(ing) {
-    rel <- tryCatch(
+    rel <- rx_try_optional_api(
       rx_get_json(paste0("/rxcui/", ing, "/allrelated")),
-      error = function(e) NULL
+      fallback = NULL,
+      context = paste0("Could not retrieve all related products for RxCUI ", ing)
     )
 
     collect_concepts(
@@ -261,11 +284,9 @@ products_for_ingredients <- function(ingredient_rxcui,
       tty_vec
     )
   }
+
   fetch_via_drugs_name <- function(ing) {
-    props <- tryCatch(
-      rx_get_json(paste0("/rxcui/", ing, "/properties")),
-      error = function(e) NULL
-    )
+    props <- rx_get_json(paste0("/rxcui/", ing, "/properties"))
 
     nm <- rx_scalar_chr(rx_pluck_chr(props, "properties", "name"))
 
@@ -277,9 +298,10 @@ products_for_ingredients <- function(ingredient_rxcui,
       ))
     }
 
-    dg <- tryCatch(
+    dg <- rx_try_optional_api(
       rx_get_json("/drugs", query = list(name = nm)),
-      error = function(e) NULL
+      fallback = NULL,
+      context = paste0("Could not retrieve drug products by name for ", nm)
     )
 
     collect_concepts(
@@ -292,9 +314,10 @@ products_for_ingredients <- function(ingredient_rxcui,
     .rxref_progress_map_dfr(
       historical_status,
       function(status) {
-        res <- tryCatch(
+        res <- rx_try_optional_api(
           rx_get_json("/allstatus", query = list(status = status)),
-          error = function(e) NULL
+          fallback = NULL,
+          context = paste0("Could not retrieve all-status concepts with status ", status)
         )
 
         concepts <- rx_pluck_list(res, "minConceptGroup", "minConcept")
@@ -348,12 +371,13 @@ products_for_ingredients <- function(ingredient_rxcui,
 
   # verify that product lists the ingredient (IN/PIN) by CUI or name
   verify_contains <- function(prod_rxcui, cui_ok, name_pat) {
-    rel_ing <- tryCatch(
+    rel_ing <- rx_try_optional_api(
       rx_get_json(
         paste0("/rxcui/", prod_rxcui, "/related"),
         query = list(tty = c("IN", "PIN"))
       ),
-      error = function(e) NULL
+      fallback = NULL,
+      context = paste0("Could not verify ingredients for product RxCUI ", prod_rxcui)
     )
 
     gs <- rx_pluck_list(rel_ing, "relatedGroup", "conceptGroup")
@@ -419,9 +443,10 @@ products_for_ingredients <- function(ingredient_rxcui,
   }
 
   verify_contains_historical <- function(prod_rxcui, cui_ok, name_pat) {
-    hs <- tryCatch(
+    hs <- rx_try_optional_api(
       rx_get_json(paste0("/rxcui/", prod_rxcui, "/historystatus")),
-      error = function(e) NULL
+      fallback = NULL,
+      context = paste0("Could not verify historical ingredients for product RxCUI ", prod_rxcui)
     )
 
     x <- rx_pluck_list(hs, "rxcuiStatusHistory")

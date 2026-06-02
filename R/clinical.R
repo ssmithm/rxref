@@ -63,10 +63,7 @@ get_clinical_attributes <- function(rxcui,
     rxcui_ids,
     function(id) {
       # 1) Pull properties to know TTY and get name
-      props <- tryCatch(
-        rx_get_json(paste0("/rxcui/", id, "/properties")),
-        error = function(e) NULL
-      )
+      props <- rx_get_json(paste0("/rxcui/", id, "/properties"))
 
       p <- rx_pluck(props, "properties", .default = list())
       tty_self <- rx_scalar_chr(rx_pluck_chr(p, "tty"))
@@ -87,12 +84,9 @@ get_clinical_attributes <- function(rxcui,
       }
 
       # Otherwise, fetch related SCD/SBD
-      rel <- tryCatch(
-        rx_get_json(
-          paste0("/rxcui/", id, "/related"),
-          query = list(tty = "SCD SBD")
-        ),
-        error = function(e) NULL
+      rel <- rx_get_json(
+        paste0("/rxcui/", id, "/related"),
+        query = list(tty = "SCD SBD")
       )
 
       groups <- rx_pluck_list(rel, "relatedGroup", "conceptGroup")
@@ -196,11 +190,17 @@ get_clinical_attributes <- function(rxcui,
 
   # 3. Dose form group (DFG) from RxNorm (TTY = DFG)
   dfg_tbl <- purrr::map_dfr(clinical_ids, function(id) {
-    rel <- tryCatch(
-      rx_get_json(paste0("/rxcui/", id, "/related"), query = list(tty = "DFG")),
-      error = function(e) NULL
+    rel <- rx_try_optional_api(
+      rx_get_json(
+        paste0("/rxcui/", id, "/related"),
+        query = list(tty = "DFG")
+      ),
+      fallback = NULL,
+      context = paste0("Could not retrieve dose-form group for RxCUI ", id)
     )
+
     groups <- rx_pluck_list(rel, "relatedGroup", "conceptGroup")
+
     if (!length(groups)) {
       return(tibble::tibble(
         related_rxcui   = id,
@@ -226,13 +226,14 @@ get_clinical_attributes <- function(rxcui,
   })
 
   # 4. Ingredient summary
-  ing_raw <- tryCatch(
+  ing_raw <- rx_try_optional_api(
     .rxref_get_ingredients_for_rxcui(
       clinical_ids,
       include_pin = TRUE,
       include_min = FALSE
     ),
-    error = function(e) NULL
+    fallback = NULL,
+    context = "Could not retrieve ingredient summaries for clinical RxCUIs"
   )
 
   if (!is.null(ing_raw) && nrow(ing_raw)) {
@@ -287,9 +288,13 @@ get_clinical_attributes <- function(rxcui,
   }
 
   # 5. Status from suppress (via get_properties)
-  props_clin <- tryCatch(
+  props_clin <- rx_try_optional_api(
     get_properties(clinical_ids, show_progress = FALSE),
-    error = function(e) tibble::tibble(rxcui = clinical_ids, suppress = NA_character_)
+    fallback = tibble::tibble(
+      rxcui = clinical_ids,
+      suppress = NA_character_
+    ),
+    context = "Could not retrieve suppress/status metadata for clinical RxCUIs"
   )
 
   status_tbl <- props_clin |>
@@ -408,12 +413,9 @@ get_clinical_attributes <- function(rxcui,
       ))
     }
 
-    rel <- tryCatch(
-      rx_get_json(
-        paste0("/rxcui/", id, "/related"),
-        query = list(tty = tty_query)
-      ),
-      error = function(e) NULL
+    rel <- rx_get_json(
+      paste0("/rxcui/", id, "/related"),
+      query = list(tty = tty_query)
     )
 
     groups <- rx_pluck_list(rel, "relatedGroup", "conceptGroup")
@@ -611,9 +613,10 @@ get_clinical_attributes <- function(rxcui,
   .rxref_progress_map_dfr(
     rxcui,
     function(id) {
-      hs <- tryCatch(
+      hs <- rx_try_optional_api(
         rx_get_json(paste0("/rxcui/", id, "/historystatus")),
-        error = function(e) NULL
+        fallback = NULL,
+        context = paste0("Could not retrieve historical status for RxCUI ", id)
       )
 
       hist <- rx_pluck_list(hs, "rxcuiStatusHistory")

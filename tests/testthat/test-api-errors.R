@@ -197,3 +197,40 @@ test_that("specific API errors inherit from rxref_api_error", {
     class = "rxref_api_error"
   )
 })
+
+test_that("rx_try_optional_api returns fallback for optional API failures", {
+  expect_warning(
+    out <- rx_try_optional_api(
+      rx_abort_api("boom", class = "rxref_server_error"),
+      fallback = "fallback",
+      context = "Testing optional request"
+    ),
+    "Testing optional request"
+  )
+
+  expect_equal(out, "fallback")
+})
+
+test_that("rx_try_optional_api handles not-found errors without warning", {
+  expect_no_warning(
+    out <- rx_try_optional_api(
+      rx_abort_api("not found", class = "rxref_not_found_error"),
+      fallback = NULL,
+      context = "Testing optional request"
+    )
+  )
+
+  expect_null(out)
+})
+
+test_that("rx_abort_api creates rxref_api_error subclass", {
+  expect_error(
+    rx_abort_api("bad", class = "rxref_rate_limit_error"),
+    class = "rxref_rate_limit_error"
+  )
+
+  expect_error(
+    rx_abort_api("bad", class = "rxref_rate_limit_error"),
+    class = "rxref_api_error"
+  )
+})
