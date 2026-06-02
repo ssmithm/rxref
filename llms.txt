@@ -575,10 +575,18 @@ source-relationship combinations.
 
 ## Package configuration
 
-Configure rxref behavior.
+Configure rxref behavior, including API settings and memoised
+API-response caching.
 
 - [`rxref_conf()`](https://www.stevenmsmith.org/rxref/reference/rxref_conf.md)
   : Configure rxref
+- [`rxref_cache()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md)
+  [`rxref_cache_info()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md)
+  [`rxref_cache_clear()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md)
+  [`rxref_cache_use_memory()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md)
+  [`rxref_cache_use_disk()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md)
+  [`rxref_cache_disable()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md)
+  : Manage the rxref cache
 
 # Articles
 

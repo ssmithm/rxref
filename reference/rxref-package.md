@@ -45,7 +45,11 @@ Common workflows include:
   [`filter_products_by_route()`](https://www.stevenmsmith.org/rxref/reference/filter_products_by_route.md).
 
 Configure package behavior with
-[`rxref_conf()`](https://www.stevenmsmith.org/rxref/reference/rxref_conf.md).
+[`rxref_conf()`](https://www.stevenmsmith.org/rxref/reference/rxref_conf.md)
+and manage memoised API response caching with
+[`rxref_cache_info()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md)
+and
+[`rxref_cache_clear()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md).
 
 ## See also
 

@@ -1,6 +1,7 @@
 # Configure rxref
 
-Configure rxref
+Configure package-level settings used by rxref, including the RxNav base
+URL, API rate delay, and memoised API-response cache.
 
 ## Usage
 
@@ -24,7 +25,9 @@ rxref_conf(
 
 - cache:
 
-  A cachem cache object used by memoised calls
+  A `cachem` cache object used by memoised API calls. See
+  [`rxref_cache()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md)
+  for cache management helpers.
 
 ## Value
 
