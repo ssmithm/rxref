@@ -28,7 +28,8 @@ and \code{\link[=get_va]{get_va()}}.
 \code{\link[=filter_products_by_route]{filter_products_by_route()}}.
 }
 
-Configure package behavior with \code{\link[=rxref_conf]{rxref_conf()}}.
+Configure package behavior with \code{\link[=rxref_conf]{rxref_conf()}} and manage memoised API
+response caching with \code{\link[=rxref_cache_info]{rxref_cache_info()}} and \code{\link[=rxref_cache_clear]{rxref_cache_clear()}}.
 }
 \seealso{
 Useful links:

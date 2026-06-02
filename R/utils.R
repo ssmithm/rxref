@@ -20,7 +20,8 @@
 #' * Deriving clinical product attributes with [get_clinical_attributes()] and
 #'   [filter_products_by_route()].
 #'
-#' Configure package behavior with [rxref_conf()].
+#' Configure package behavior with [rxref_conf()] and manage memoised API
+#' response caching with [rxref_cache_info()] and [rxref_cache_clear()].
 #'
 #' @keywords internal
 "_PACKAGE"

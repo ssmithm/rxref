@@ -15,11 +15,13 @@ rxref_conf(
 
 \item{rate_delay}{Seconds to wait between HTTP calls}
 
-\item{cache}{A cachem cache object used by memoised calls}
+\item{cache}{A \code{cachem} cache object used by memoised API calls. See
+\code{\link[=rxref_cache]{rxref_cache()}} for cache management helpers.}
 }
 \value{
 A named list of current settings
 }
 \description{
-Configure rxref
+Configure package-level settings used by rxref, including the RxNav base URL,
+API rate delay, and memoised API-response cache.
 }
