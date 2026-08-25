@@ -1,5 +1,35 @@
 # Changelog
 
+## rxref 0.5.0
+
+### Improvements
+
+- Added cache management helpers:
+  [`rxref_cache()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md),
+  [`rxref_cache_info()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md),
+  [`rxref_cache_clear()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md),
+  [`rxref_cache_use_memory()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md),
+  [`rxref_cache_use_disk()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md),
+  and
+  [`rxref_cache_disable()`](https://www.stevenmsmith.org/rxref/reference/rxref_cache.md).
+  These helpers make it easier to inspect, clear, persist, or disable
+  rxref’s memoised RxNorm/RxClass API-response cache.
+- Revised vignettes to better distinguish use cases for `rxref`, cleaned
+  up vignette data bundling and removed potentially confusing avoidance
+  of API calls during vignette building from the vignettes themselves.
+
+### API and error-handling improvements
+
+- Improved API error-handling consistency across `rxref`. Centralized
+  `rxref` API condition classes are now used more consistently for
+  connection errors, rate limits, server errors, empty responses,
+  malformed JSON, and other unsuccessful HTTP responses from the NLM.
+- Added internal optional-API handling helpers to return fallback values
+  with informative warnings as opposed to silent API failures.
+- Updated NDC status retrieval, clinical attribute enrichment,
+  historical clinical fallback, and product-search fallback logic to
+  distinguish required API calls from optional enrichment calls.
+
 ## rxref 0.4.0
 
 CRAN release: 2026-05-27

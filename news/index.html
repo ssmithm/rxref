@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">rxref</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,20 @@
       <small>Source: <a href="https://github.com/ssmithm/rxref/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="rxref-050">rxref 0.5.0<a class="anchor" aria-label="anchor" href="#rxref-050"></a></h2>
+<div class="section level3">
+<h3 id="improvements-0-5-0">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-5-0"></a></h3>
+<ul><li>Added cache management helpers: <code><a href="../reference/rxref_cache.html">rxref_cache()</a></code>, <code><a href="../reference/rxref_cache.html">rxref_cache_info()</a></code>, <code><a href="../reference/rxref_cache.html">rxref_cache_clear()</a></code>, <code><a href="../reference/rxref_cache.html">rxref_cache_use_memory()</a></code>, <code><a href="../reference/rxref_cache.html">rxref_cache_use_disk()</a></code>, and <code><a href="../reference/rxref_cache.html">rxref_cache_disable()</a></code>. These helpers make it easier to inspect, clear, persist, or disable rxref’s memoised RxNorm/RxClass API-response cache.</li>
+<li>Revised vignettes to better distinguish use cases for <code>rxref</code>, cleaned up vignette data bundling and removed potentially confusing avoidance of API calls during vignette building from the vignettes themselves.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="api-and-error-handling-improvements-0-5-0">API and error-handling improvements<a class="anchor" aria-label="anchor" href="#api-and-error-handling-improvements-0-5-0"></a></h3>
+<ul><li>Improved API error-handling consistency across <code>rxref</code>. Centralized <code>rxref</code> API condition classes are now used more consistently for connection errors, rate limits, server errors, empty responses, malformed JSON, and other unsuccessful HTTP responses from the NLM.</li>
+<li>Added internal optional-API handling helpers to return fallback values with informative warnings as opposed to silent API failures.</li>
+<li>Updated NDC status retrieval, clinical attribute enrichment, historical clinical fallback, and product-search fallback logic to distinguish required API calls from optional enrichment calls.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="rxref-040">rxref 0.4.0<a class="anchor" aria-label="anchor" href="#rxref-040"></a></h2><p class="text-muted">CRAN release: 2026-05-27</p>
 <div class="section level3">
