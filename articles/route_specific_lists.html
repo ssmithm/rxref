@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Building route-specific RxCUI and NDC lists • rxref</title>
+<title>Case Study: Building route-specific RxCUI and NDC lists • rxref</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -15,7 +15,7 @@
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Building route-specific RxCUI and NDC lists">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Case Study: Building route-specific RxCUI and NDC lists">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -62,7 +62,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Building route-specific RxCUI and NDC lists</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Case Study: Building route-specific RxCUI and NDC lists</h1>
                         <h4 data-toc-skip class="author">Steven
 Smith</h4>
             
@@ -74,53 +74,45 @@ Smith</h4>
     
     
 <div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+<h2 id="case">Case<a class="anchor" aria-label="anchor" href="#case"></a>
 </h2>
 <p>A common use case for <code>rxref</code> is to develop a list of
-RxNorm product concepts and National Drug Codes (NDCs) for a drug
-class.</p>
-<p>For example, suppose we want to identify product RxCUIs and active
-NDCs for oral beta-blockers. This is not as simple as searching for
-beta-blocker ingredients and mapping every product to NDCs, because some
-beta-blockers are available through multiple routes.</p>
-<p>For example:</p>
+RxNorm product concepts (RxCUIs) and National Drug Codes (NDCs) for a
+medication class. However, sometimes the ingredient alone is not
+sufficient to define the exposure.</p>
+<p>Suppose we want to identify <strong>oral beta-blocker
+products</strong> for an outpatient pharmacoepidemiologic study. Several
+beta-blockers are available via multiple routes of administration. For
+example:</p>
 <ul>
-<li>
-<code>metoprolol</code>, <code>atenolol</code>,
-<code>labetalol</code>, <code>propranolol</code>, and
-<code>sotalol</code> may have oral and injectable products;</li>
-<li>
-<code>esmolol</code> is injectable only;</li>
-<li>
-<code>timolol</code>, <code>betaxolol</code>, and related drugs may
-have ophthalmic products.</li>
+<li>metoprolol, atenolol, labetalol, propranolol, and sotalol have oral
+and injectable products;</li>
+<li>esmolol is primarily used as an injectable product; and</li>
+<li>timolol, betaxolol, and related drugs may have ophthalmic
+products.</li>
 </ul>
-<p>For many pharmacoepidemiologic studies, we may want oral
-outpatient-use products only.</p>
-<p>This vignette walks through a tidy workflow for:</p>
+<p>If we simply expand beta-blocker ingredients to all products and map
+them to NDCs, we would capture products outside the intended exposure
+definition.</p>
+<p>This case study builds an oral beta-blocker medication list in five
+steps:</p>
 <ol style="list-style-type: decimal">
-<li>resolving drug names to ingredient RxCUIs;</li>
-<li>expanding ingredient RxCUIs to product RxCUIs;</li>
-<li>filtering product RxCUIs by route; and</li>
-<li>mapping the filtered product RxCUIs to active NDCs.</li>
+<li>define the ingredients of interest;</li>
+<li>resolve ingredient names to RxNorm ingredient RxCUIs;</li>
+<li>expand the ingredients to product-level RxNorm concepts;</li>
+<li>inspect and filter products by route; and</li>
+<li>map the final oral products to active NDCs.</li>
 </ol>
-<p>The examples use precomputed data by default so the vignette can be
-built without querying the live RxNorm API. To rebuild the examples with
-live API calls, set:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>RXREF_BUILD_VIGNETTES_ONLINE <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span></code></pre></div>
+<p>The displayed results use precomputed data bundled with
+<code>rxref</code>, so the vignette can be built without requiring
+access to the live RxNorm API. The code shown below is the code users
+can run interactively to generate the results from the current API.</p>
 </div>
 <div class="section level2">
-<h2 id="define-a-beta-blocker-ingredient-list">Define a beta-blocker ingredient list<a class="anchor" aria-label="anchor" href="#define-a-beta-blocker-ingredient-list"></a>
+<h2 id="define-the-ingredient-list">Define the ingredient list<a class="anchor" aria-label="anchor" href="#define-the-ingredient-list"></a>
 </h2>
-<p>In this example, we start with a curated list of beta-blocker
-ingredient names.</p>
-<p>Users can also use RxClass-related helpers, such as
-<code><a href="../reference/find_classes.html">find_classes()</a></code> or <code><a href="../reference/get_class_members.html">get_class_members()</a></code>, when a
-suitable source vocabulary is available. However, curated ingredient
-lists remain useful because class membership may not perfectly match a
-study-specific exposure definition.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<p>We begin with a curated list of beta-blocker ingredients.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">beta_blocker_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"acebutolol"</span>,</span>
 <span>  <span class="st">"atenolol"</span>,</span>
@@ -136,29 +128,36 @@ study-specific exposure definition.</p>
 <span>  <span class="st">"propranolol"</span>,</span>
 <span>  <span class="st">"sotalol"</span>,</span>
 <span>  <span class="st">"timolol"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">beta_blocker_names</span></span>
+<span><span class="co">#&gt;  [1] "acebutolol"  "atenolol"    "betaxolol"   "bisoprolol"  "carvedilol" </span></span>
+<span><span class="co">#&gt;  [6] "labetalol"   "metoprolol"  "nadolol"     "nebivolol"   "penbutolol" </span></span>
+<span><span class="co">#&gt; [11] "pindolol"    "propranolol" "sotalol"     "timolol"</span></span></code></pre></div>
+<p>A curated ingredient list is often appropriate when the study
+definition is known in advance. <code>rxref</code> also provides RxClass
+helpers such as <code><a href="../reference/find_classes.html">find_classes()</a></code> and
+<code><a href="../reference/get_class_members.html">get_class_members()</a></code> when users want to begin from a source
+vocabulary class rather than a prespecified list.</p>
 </div>
 <div class="section level2">
-<h2 id="resolve-drug-names-to-ingredient-rxcuis">Resolve drug names to ingredient RxCUIs<a class="anchor" aria-label="anchor" href="#resolve-drug-names-to-ingredient-rxcuis"></a>
+<h2 id="step-1-identify-ingredient-rxcuis">Step 1: Identify ingredient RxCUIs<a class="anchor" aria-label="anchor" href="#step-1-identify-ingredient-rxcuis"></a>
 </h2>
-<p>First, use <code><a href="../reference/find_ingredients.html">find_ingredients()</a></code> to resolve each drug name
-to an RxNorm ingredient concept.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_ingredients</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_ingredients.html">find_ingredients</a></span><span class="op">(</span><span class="va">beta_blocker_names</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tty</span> <span class="op">==</span> <span class="st">"IN"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span></span>
-<span>      <span class="va">input</span>,</span>
-<span>      ingredient_rxcui <span class="op">=</span> <span class="va">rxcui</span>,</span>
-<span>      ingredient_name <span class="op">=</span> <span class="va">name</span>,</span>
-<span>      ingredient_tty <span class="op">=</span> <span class="va">tty</span></span>
-<span>    <span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_ingredients</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span><span class="st">"bb_ingredients.rds"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
+<p>Use <code><a href="../reference/find_ingredients.html">find_ingredients()</a></code> to resolve each name to an RxNorm
+ingredient concept. Here we retain TTY = <code>"IN"</code>, representing
+the base ingredient concept.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_ingredients</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_ingredients.html">find_ingredients</a></span><span class="op">(</span><span class="va">beta_blocker_names</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tty</span> <span class="op">==</span> <span class="st">"IN"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span></span>
+<span>    <span class="va">input</span>,</span>
+<span>    ingredient_rxcui <span class="op">=</span> <span class="va">rxcui</span>,</span>
+<span>    ingredient_name <span class="op">=</span> <span class="va">name</span>,</span>
+<span>    ingredient_tty <span class="op">=</span> <span class="va">tty</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="va">bb_ingredients</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 14 × 4</span></span></span>
+<span><span class="va">bb_ingredients</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 14 × 4</span></span></span>
 <span><span class="co">#&gt;    input       ingredient_rxcui ingredient_name ingredient_tty</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> acebutolol  149              acebutolol      IN            </span></span>
@@ -174,123 +173,68 @@ to an RxNorm ingredient concept.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> pindolol    8332             pindolol        IN            </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> propranolol 8787             propranolol     IN            </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> sotalol     9947             sotalol         IN            </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> timolol     10600            timolol         IN</span></span></code></pre></div>
-<p>The resulting table contains one row per resolved ingredient. These
-ingredient RxCUIs are the starting point for product expansion.</p>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> timolol     10600            timolol         IN</span></span></code></pre>
+<p>This is a useful checkpoint: before expanding to hundreds of product
+concepts, verify that each study-defined name resolved to the intended
+ingredient.</p>
 </div>
 <div class="section level2">
-<h2 id="expand-ingredients-to-product-rxcuis">Expand ingredients to product RxCUIs<a class="anchor" aria-label="anchor" href="#expand-ingredients-to-product-rxcuis"></a>
+<h2 id="step-2-expand-ingredients-to-product-rxcuis">Step 2: Expand ingredients to product RxCUIs<a class="anchor" aria-label="anchor" href="#step-2-expand-ingredients-to-product-rxcuis"></a>
 </h2>
 <p>Next, use <code><a href="../reference/products_for_ingredients.html">products_for_ingredients()</a></code> to identify
-product-level RxNorm concepts containing each ingredient.</p>
-<p>In this example, we use active RxNorm concepts and include
-combination products.</p>
+product-level RxNorm concepts containing the selected ingredients.</p>
+<p>For this example, we use the default product-focused TTYs, retain
+fixed-dose combination products, and initially keep products from all
+routes.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_products</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
-<span>    <span class="va">bb_ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
-<span>    ttys <span class="op">=</span> <span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"default"</span><span class="op">)</span>,</span>
-<span>    include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    concept_status <span class="op">=</span> <span class="st">"active"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">bb_ingredients</span>, by <span class="op">=</span> <span class="st">"ingredient_rxcui"</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_products</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span><span class="st">"bb_products.rds"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">bb_products</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 219 × 8</span></span></span>
-<span><span class="co">#&gt;    ingredient_rxcui product_rxcui name                 tty   n_ingredients input</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 149              998685        acebutolol 400 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 149              998689        acebutolol 200 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 149              998693        acebutolol 100 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 149              998694        acebutolol 200 MG /… SCD               2 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 149              998695        acebutolol 400 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1202             104308        atenolol 0.5 MG/ML … SCD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1202             150750        atenolol 25 MG Oral… SBD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1202             152414        atenolol 50 MG Oral… SBD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1202             152916        atenolol 50 MG / ch… SCD               2 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1202             153155        atenolol 25 MG / be… SCD               2 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 209 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: ingredient_name &lt;chr&gt;, ingredient_tty &lt;chr&gt;</span></span></span></code></pre></div>
-<p>Because <code>include_combos = TRUE</code>, combination products are
-retained. For beta-blockers, this means products such as
-beta-blocker/thiazide combinations may be included.</p>
-<p>To exclude combination products, set
-<code>include_combos = FALSE</code>.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_single_ingredient_products</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
-<span>    <span class="va">bb_ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
-<span>    ttys <span class="op">=</span> <span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"default"</span><span class="op">)</span>,</span>
-<span>    include_combos <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>    concept_status <span class="op">=</span> <span class="st">"active"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">bb_ingredients</span>, by <span class="op">=</span> <span class="st">"ingredient_rxcui"</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_single_ingredient_products</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span></span>
-<span>    <span class="st">"bb_single_ingredient_products.rds"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">bb_single_ingredient_products</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 177 × 8</span></span></span>
-<span><span class="co">#&gt;    ingredient_rxcui product_rxcui name                 tty   n_ingredients input</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 149              998685        acebutolol 400 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 149              998689        acebutolol 200 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 149              998693        acebutolol 100 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 149              998695        acebutolol 400 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1202             104308        atenolol 0.5 MG/ML … SCD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1202             150750        atenolol 25 MG Oral… SBD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1202             152414        atenolol 50 MG Oral… SBD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1202             197379        atenolol 100 MG Ora… SCD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1202             197380        atenolol 25 MG Oral… SCD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1202             197381        atenolol 50 MG Oral… SCD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 167 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: ingredient_name &lt;chr&gt;, ingredient_tty &lt;chr&gt;</span></span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="active-versus-historical-rxnorm-concepts">Active versus historical RxNorm concepts<a class="anchor" aria-label="anchor" href="#active-versus-historical-rxnorm-concepts"></a>
-</h2>
-<p>For many current medication list workflows,
-<code>concept_status = "active"</code> is a good default. This limits
-product expansion to active RxNorm concepts.</p>
-<p>For studies covering older calendar periods, users may want to
-include historical RxNorm concepts as well.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_products_historical</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">bb_products</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
 <span>  <span class="va">bb_ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
 <span>  ttys <span class="op">=</span> <span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"default"</span><span class="op">)</span>,</span>
 <span>  include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  concept_status <span class="op">=</span> <span class="st">"active_and_historical"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Historical concepts can be useful when reconstructing medication
-exposure during older study periods. However, historical product
-concepts may have less complete clinical attribute information than
-active concepts. Route filtering should therefore be reviewed carefully
-when <code>concept_status = "active_and_historical"</code> is used.</p>
+<span>  concept_status <span class="op">=</span> <span class="st">"active"</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="co"># rejoin the ingredients list so you know what maps to what</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">bb_ingredients</span>, by <span class="op">=</span> <span class="st">"ingredient_rxcui"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bb_products</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 30 × 8</span></span></span>
+<span><span class="co">#&gt;    ingredient_rxcui product_rxcui name                 tty   n_ingredients input</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 149              998693        acebutolol 100 MG O… SCD               1 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 149              998694        acebutolol 200 MG /… SCD               2 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 149              998689        acebutolol 200 MG O… SCD               1 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 149              998685        acebutolol 400 MG O… SCD               1 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 149              998695        acebutolol 400 MG O… SCD               1 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1202             746023        atenolol 100 MG / c… SBD               2 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1202             201322        atenolol 100 MG Ora… SBD               1 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1202             150750        atenolol 25 MG Oral… SBD               1 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1202             746030        atenolol 50 MG / ch… SBD               2 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1202             152414        atenolol 50 MG Oral… SBD               1 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: ingredient_name &lt;chr&gt;, ingredient_tty &lt;chr&gt;</span></span></span></code></pre>
+<p>At this stage, the product table intentionally contains products from
+all routes. Keeping route filtering separate for the moment makes it
+easier to inspect what would otherwise be included in the medication
+definition.</p>
+<p>Because <code>include_combos = TRUE</code>, fixed-dose combination
+products may also be present. We’ll return to that later.</p>
 </div>
 <div class="section level2">
-<h2 id="why-route-filtering-matters">Why route filtering matters<a class="anchor" aria-label="anchor" href="#why-route-filtering-matters"></a>
+<h2 id="step-3-inspect-route-and-dose-form-information">Step 3: Inspect route and dose-form information<a class="anchor" aria-label="anchor" href="#step-3-inspect-route-and-dose-form-information"></a>
 </h2>
-<p>At this point, the product list may include products from multiple
-routes. For example, some beta-blockers have oral tablets, injectable
-products, or ophthalmic solutions.</p>
-<p>We can use <code><a href="../reference/get_clinical_attributes.html">get_clinical_attributes()</a></code> to inspect route
-and dose-form information for the product RxCUIs.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_attrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_clinical_attributes.html">get_clinical_attributes</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">bb_products</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>product_rxcui <span class="op">=</span> <span class="va">rxcui</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_attrs</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span><span class="st">"bb_attrs.rds"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
+<p><code><a href="../reference/get_clinical_attributes.html">get_clinical_attributes()</a></code> derives clinically useful
+information from the product concepts, including route, dose form,
+dose-form group, ingredient count, and brand/generic indicators.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_attributes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_clinical_attributes.html">get_clinical_attributes</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">bb_products</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>product_rxcui <span class="op">=</span> <span class="va">rxcui</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">bb_attrs</span> <span class="op">|&gt;</span></span>
+<span><span class="va">bb_attributes</span></span></code></pre></div>
+<p>A quick summary shows why route filtering is needed:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_attributes</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">route</span>, <span class="va">dose_form_group</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 3</span></span></span>
 <span><span class="co">#&gt;   route      dose_form_group        n</span></span>
@@ -298,101 +242,20 @@ and dose-form information for the product RxCUIs.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> ORAL       Oral Product         176</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> OPHTHALMIC Ophthalmic Product    29</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> INJECTION  Injectable Product    14</span></span></code></pre></div>
-<p>This helps verify whether the product list includes routes that are
-outside the intended use case.</p>
-</div>
-<div class="section level2">
-<h2 id="filter-to-oral-products">Filter to oral products<a class="anchor" aria-label="anchor" href="#filter-to-oral-products"></a>
-</h2>
-<p>To keep only orally available products, use
-<code><a href="../reference/filter_products_by_route.html">filter_products_by_route()</a></code>.</p>
+<p>The exact mix of routes depends on the current RxNorm concepts
+returned for the selected ingredients, but the important point is that
+an ingredient-based search can identify products that do not correspond
+to the intended route of exposure.</p>
+<p>It can also be useful to inspect individual products associated with
+non-oral routes:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_products</span> <span class="op">&lt;-</span> <span class="va">bb_products</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/filter_products_by_route.html">filter_products_by_route</a></span><span class="op">(</span>route <span class="op">=</span> <span class="st">"ORAL"</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_products</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span><span class="st">"bb_oral_products.rds"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">bb_oral_products</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 176 × 11</span></span></span>
-<span><span class="co">#&gt;    ingredient_rxcui product_rxcui name                 tty   n_ingredients input</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 149              998685        acebutolol 400 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 149              998689        acebutolol 200 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 149              998693        acebutolol 100 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 149              998694        acebutolol 200 MG /… SCD               2 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 149              998695        acebutolol 400 MG O… SCD               1 aceb…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1202             150750        atenolol 25 MG Oral… SBD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1202             152414        atenolol 50 MG Oral… SBD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1202             152916        atenolol 50 MG / ch… SCD               2 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1202             153155        atenolol 25 MG / be… SCD               2 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1202             197379        atenolol 100 MG Ora… SCD               1 aten…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 166 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: ingredient_name &lt;chr&gt;, ingredient_tty &lt;chr&gt;, route &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   dose_form &lt;chr&gt;, dose_form_group &lt;chr&gt;</span></span></span></code></pre></div>
-<p>The returned table keeps product-level metadata and appends
-summarized route and dose-form information.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">route</span>, <span class="va">dose_form_group</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
-<span><span class="co">#&gt;   route dose_form_group     n</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> ORAL  Oral Product      176</span></span></code></pre></div>
-<p>This should retain products such as oral tablets, capsules, and oral
-solutions, while excluding injectable or ophthalmic products.</p>
-<p>Route filtering relies on clinical attribute information available
-through RxNorm. If a product concept lacks route or dose-form
-information, it may not be retained by route-specific filters. This is
-especially important when historical concepts are included.</p>
-</div>
-<div class="section level2">
-<h2 id="map-oral-product-rxcuis-to-active-ndcs">Map oral product RxCUIs to active NDCs<a class="anchor" aria-label="anchor" href="#map-oral-product-rxcuis-to-active-ndcs"></a>
-</h2>
-<p>Once the product list is restricted to oral products, use
-<code><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc()</a></code> to map the product RxCUIs to NDCs.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_ndc_map</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">bb_oral_products</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span>,</span>
-<span>    status <span class="op">=</span> <span class="st">"ACTIVE"</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span>  <span class="va">bb_oral_ndcs</span> <span class="op">&lt;-</span> <span class="va">bb_oral_ndc_map</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
-<span>      <span class="va">bb_oral_products</span>,</span>
-<span>      by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rxcui"</span> <span class="op">=</span> <span class="st">"product_rxcui"</span><span class="op">)</span></span>
-<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span></span>
-<span>      product_rxcui <span class="op">=</span> <span class="va">rxcui</span>,</span>
-<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_ndcs</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span><span class="st">"bb_oral_ndcs.rds"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">bb_oral_ndcs</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4,670 × 13</span></span></span>
-<span><span class="co">#&gt;    product_rxcui ndc11     ndc_status ingredient_rxcui name  tty   n_ingredients</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 998685        00378140… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 998685        10135063… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 998685        51407066… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 998685        53746067… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 998685        53746067… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 998685        53746067… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 998685        62559025… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 998685        65162067… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 998685        65162067… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 998685        65162067… ACTIVE     149              aceb… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4,660 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 6 more variables: input &lt;chr&gt;, ingredient_name &lt;chr&gt;, ingredient_tty &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   route &lt;chr&gt;, dose_form &lt;chr&gt;, dose_form_group &lt;chr&gt;</span></span></span></code></pre></div>
-<p>The output is a flat tibble with one row per product RxCUI/NDC pair.
-Product metadata is retained alongside the NDC.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_ndcs</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="va">bb_products</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
+<span>    <span class="va">bb_attributes</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">product_rxcui</span>, <span class="va">route</span>, <span class="va">dose_form</span>, <span class="va">dose_form_group</span><span class="op">)</span>,</span>
+<span>    by <span class="op">=</span> <span class="st">"product_rxcui"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">route</span><span class="op">)</span> <span class="op">|</span> <span class="va">route</span> <span class="op">!=</span> <span class="st">"ORAL"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
 <span>    <span class="va">ingredient_name</span>,</span>
 <span>    <span class="va">product_rxcui</span>,</span>
@@ -400,10 +263,93 @@ Product metadata is retained alongside the NDC.</p>
 <span>    <span class="va">tty</span>,</span>
 <span>    <span class="va">route</span>,</span>
 <span>    <span class="va">dose_form</span>,</span>
-<span>    <span class="va">ndc11</span>,</span>
-<span>    <span class="va">ndc_status</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4,670 × 8</span></span></span>
+<span>    <span class="va">dose_form_group</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">ingredient_name</span>, <span class="va">route</span>, <span class="va">name</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">30</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 30 × 7</span></span></span>
+<span><span class="co">#&gt;    ingredient_name product_rxcui name      tty   route dose_form dose_form_group</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> atenolol        104308        atenolol… SCD   INJE… Injectab… Injectable Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> betaxolol       308719        betaxolo… SCD   OPHT… Ophthalm… Ophthalmic Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> betaxolol       213729        betaxolo… SBD   OPHT… Ophthalm… Ophthalmic Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> betaxolol       308720        betaxolo… SCD   OPHT… Ophthalm… Ophthalmic Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> labetalol       2479566       100 ML l… SCD   INJE… Injection Injectable Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> labetalol       2598343       2 ML lab… SCD   INJE… Prefille… Injectable Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> labetalol       2479564       200 ML l… SCD   INJE… Injection Injectable Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> labetalol       2479567       300 ML l… SCD   INJE… Injection Injectable Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> labetalol       1234256       4 ML lab… SCD   INJE… Cartridge Injectable Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> labetalol       2477889       4 ML lab… SCD   INJE… Injection Injectable Pro…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more rows</span></span></span></code></pre></div>
+<p>This inspection step is especially useful when working with a
+medication class for which route heterogeneity is clinically
+important.</p>
+</div>
+<div class="section level2">
+<h2 id="step-4-filter-to-oral-products">Step 4: Filter to oral products<a class="anchor" aria-label="anchor" href="#step-4-filter-to-oral-products"></a>
+</h2>
+<p>Once we have confirmed that the unfiltered product set contains
+multiple routes, use <code><a href="../reference/filter_products_by_route.html">filter_products_by_route()</a></code> to retain
+only oral products.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">&lt;-</span> <span class="va">bb_products</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/filter_products_by_route.html">filter_products_by_route</a></span><span class="op">(</span>route <span class="op">=</span> <span class="st">"ORAL"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bb_oral_products</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 30 × 11</span></span></span>
+<span><span class="co">#&gt;    ingredient_rxcui product_rxcui name                 tty   n_ingredients input</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 149              998693        acebutolol 100 MG O… SCD               1 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 149              998694        acebutolol 200 MG /… SCD               2 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 149              998689        acebutolol 200 MG O… SCD               1 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 149              998685        acebutolol 400 MG O… SCD               1 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 149              998695        acebutolol 400 MG O… SCD               1 aceb…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1202             746023        atenolol 100 MG / c… SBD               2 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1202             201322        atenolol 100 MG Ora… SBD               1 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1202             150750        atenolol 25 MG Oral… SBD               1 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1202             746030        atenolol 50 MG / ch… SBD               2 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1202             152414        atenolol 50 MG Oral… SBD               1 aten…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: ingredient_name &lt;chr&gt;, ingredient_tty &lt;chr&gt;, route &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   dose_form &lt;chr&gt;, dose_form_group &lt;chr&gt;</span></span></span></code></pre>
+<p>The returned table preserves the product-level information and
+appends summarized route, dose-form, and dose-form-group fields.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">route</span>, <span class="va">dose_form_group</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
+<span><span class="co">#&gt;   route dose_form_group     n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> ORAL  Oral Product      176</span></span></code></pre></div>
+<p>Route filtering depends on clinical attribute information available
+for a product RxCUI. A product without a route match is not retained, so
+route-specific medication lists should always be reviewed before they
+are used in an analysis.</p>
+</div>
+<div class="section level2">
+<h2 id="step-5-map-oral-product-rxcuis-to-active-ndcs">Step 5: Map oral product RxCUIs to active NDCs<a class="anchor" aria-label="anchor" href="#step-5-map-oral-product-rxcuis-to-active-ndcs"></a>
+</h2>
+<p>After restricting the RxCUI definition to oral products, map those
+products to NDCs.</p>
+<p>For a current medication list, we use current NDC associations and
+retain NDCs whose reported status is <code>"ACTIVE"</code>.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_ndc_map</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">bb_oral_products</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span>,</span>
+<span>  history <span class="op">=</span> <span class="st">"active"</span>,</span>
+<span>  status <span class="op">=</span> <span class="st">"ACTIVE"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bb_oral_ndcs</span> <span class="op">&lt;-</span> <span class="va">bb_oral_ndc_map</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
+<span>    <span class="va">bb_oral_products</span>,</span>
+<span>    by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rxcui"</span> <span class="op">=</span> <span class="st">"product_rxcui"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>product_rxcui <span class="op">=</span> <span class="va">rxcui</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bb_oral_ndcs</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 30 × 8</span></span></span>
 <span><span class="co">#&gt;    ingredient_name product_rxcui name     tty   route dose_form ndc11 ndc_status</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> acebutolol      998685        acebuto… SCD   ORAL  Oral Cap… 0037… ACTIVE    </span></span>
@@ -416,58 +362,71 @@ Product metadata is retained alongside the NDC.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> acebutolol      998685        acebuto… SCD   ORAL  Oral Cap… 6516… ACTIVE    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> acebutolol      998685        acebuto… SCD   ORAL  Oral Cap… 6516… ACTIVE    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> acebutolol      998685        acebuto… SCD   ORAL  Oral Cap… 6516… ACTIVE    </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4,660 more rows</span></span></span></code></pre></div>
-<p>The <code>status = "ACTIVE"</code> argument controls the NDC status
-returned by <code><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc()</a></code>. This is distinct from
-<code>concept_status</code>, which controls whether active or historical
-RxNorm concepts are included during product expansion.</p>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 20 more rows</span></span></span></code></pre>
+<p>At this point, we have two useful study resources:</p>
+<ul>
+<li>
+<code>bb_oral_products</code>, containing the route-restricted RxCUI
+definition; and</li>
+<li>
+<code>bb_oral_ndcs</code>, containing the corresponding active NDC
+mappings.</li>
+</ul>
+<p>Keeping both can be useful when the medication definition will be
+applied to data sources that use different drug identifiers.</p>
 </div>
 <div class="section level2">
-<h2 id="summarize-the-resulting-list">Summarize the resulting list<a class="anchor" aria-label="anchor" href="#summarize-the-resulting-list"></a>
+<h2 id="quality-control-checks">Quality-control checks<a class="anchor" aria-label="anchor" href="#quality-control-checks"></a>
 </h2>
-<p>For quality control, it is useful to summarize the number of products
-and NDCs by ingredient.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">ingredient_name</span>, sort <span class="op">=</span> <span class="cn">TRUE</span>, name <span class="op">=</span> <span class="st">"n_product_rxcuis"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 14 × 2</span></span></span>
-<span><span class="co">#&gt;    ingredient_name n_product_rxcuis</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> metoprolol                    34</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> propranolol                   31</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> sotalol                       22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> carvedilol                    16</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> atenolol                      15</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> bisoprolol                    12</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> nebivolol                     10</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> labetalol                      9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> nadolol                        9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> timolol                        6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> acebutolol                     5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> pindolol                       4</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> betaxolol                      2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> penbutolol                     1</span></span></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_ndcs</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">ingredient_name</span>, sort <span class="op">=</span> <span class="cn">TRUE</span>, name <span class="op">=</span> <span class="st">"n_active_ndcs"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 13 × 2</span></span></span>
-<span><span class="co">#&gt;    ingredient_name n_active_ndcs</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> metoprolol               <span style="text-decoration: underline;">1</span>587</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> carvedilol                712</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> propranolol               588</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> atenolol                  525</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> labetalol                 312</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> nebivolol                 265</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> bisoprolol                262</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> sotalol                   184</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> nadolol                   173</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> acebutolol                 21</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> pindolol                   19</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> betaxolol                  11</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> timolol                    11</span></span></code></pre></div>
-<p>You may also want to inspect combination products separately.</p>
+<p>Route-specific medication definitions benefit from several simple
+quality checks before they are finalized.</p>
+<div class="section level3">
+<h3 id="confirm-the-observed-routes">Confirm the observed routes<a class="anchor" aria-label="anchor" href="#confirm-the-observed-routes"></a>
+</h3>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">route</span>, <span class="va">dose_form_group</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
+<span><span class="co">#&gt;   route dose_form_group     n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> ORAL  Oral Product      176</span></span></code></pre></div>
+<p>For this definition, every retained product should have an oral route
+assignment.</p>
+</div>
+<div class="section level3">
+<h3 id="look-for-non-oral-terminology-in-product-names">Look for non-oral terminology in product names<a class="anchor" aria-label="anchor" href="#look-for-non-oral-terminology-in-product-names"></a>
+</h3>
+<p>A name-based check is not a substitute for structured route
+filtering, but it is a useful secondary screen.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span></span>
+<span>    <span class="st">"Injection|Injectable|Ophthalmic|Topical|Transdermal|Nasal|Inhalation"</span>,</span>
+<span>    <span class="va">name</span>,</span>
+<span>    ignore.case <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
+<span>    <span class="va">ingredient_name</span>,</span>
+<span>    <span class="va">product_rxcui</span>,</span>
+<span>    <span class="va">name</span>,</span>
+<span>    <span class="va">tty</span>,</span>
+<span>    <span class="va">route</span>,</span>
+<span>    <span class="va">dose_form</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 6 variables: ingredient_name &lt;chr&gt;, product_rxcui &lt;chr&gt;, name &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   tty &lt;chr&gt;, route &lt;chr&gt;, dose_form &lt;chr&gt;</span></span></span></code></pre></div>
+<p>Unexpected rows should be reviewed rather than automatically removed,
+because product naming conventions do not always map perfectly to route.
+And, again, sometimes RxNorm has mistakes in the source data that will
+eventually get corrected.</p>
+</div>
+<div class="section level3">
+<h3 id="review-combination-products">Review combination products<a class="anchor" aria-label="anchor" href="#review-combination-products"></a>
+</h3>
+<p>Because this example retained combination products, inspect them
+explicitly:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n_ingredients</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
@@ -478,263 +437,37 @@ and NDCs by ingredient.</p>
 <span>    <span class="va">n_ingredients</span>,</span>
 <span>    <span class="va">route</span>,</span>
 <span>    <span class="va">dose_form</span></span>
-<span>  <span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">ingredient_name</span>, <span class="va">name</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 35 × 7</span></span></span>
 <span><span class="co">#&gt;    ingredient_name product_rxcui name        tty   n_ingredients route dose_form</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> acebutolol      998694        acebutolol… SCD               2 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> atenolol        152916        atenolol 5… SCD               2 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> atenolol        153155        atenolol 2… SCD               2 ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> atenolol        197382        atenolol 1… SCD               2 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> atenolol        197383        atenolol 5… SCD               2 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> atenolol        393275        atenolol 5… SCD               2 ORAL  Extended…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> atenolol        746023        atenolol 1… SBD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> atenolol        977920        amiloride … SCD               3 ORAL  Oral Cap…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> atenolol        197382        atenolol 1… SCD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> atenolol        746023        atenolol 1… SBD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> atenolol        153155        atenolol 2… SCD               2 ORAL  Oral Cap…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> atenolol        152916        atenolol 5… SCD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> atenolol        197383        atenolol 5… SCD               2 ORAL  Oral Tab…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> atenolol        746030        atenolol 5… SBD               2 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> atenolol        977920        amiloride … SCD               3 ORAL  Oral Cap…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> atenolol        393275        atenolol 5… SCD               2 ORAL  Extended…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> bisoprolol      854908        bisoprolol… SCD               2 ORAL  Oral Tab…</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 25 more rows</span></span></span></code></pre></div>
-<p>Depending on the scientific question, combination products may be
-appropriate to include or exclude. For example, beta-blocker/thiazide
-combination products may be relevant for antihypertensive exposure
-definitions but not for studies focused on beta-blocker monotherapy.</p>
-</div>
-<div class="section level2">
-<h2 id="a-shortcut-using-search_drug">A shortcut using <code>search_drug()</code><a class="anchor" aria-label="anchor" href="#a-shortcut-using-search_drug"></a>
-</h2>
-<p>The same core workflow can be run more compactly with
-<code><a href="../reference/search_drug.html">search_drug()</a></code>. This function combines ingredient searching,
-product expansion, optional route filtering, and optional NDC
-mapping.</p>
-<p>To return oral product RxCUIs only:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_rxcuis</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
-<span>    <span class="va">beta_blocker_names</span>,</span>
-<span>    return <span class="op">=</span> <span class="st">"rxcui"</span>,</span>
-<span>    route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
-<span>    include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    concept_status <span class="op">=</span> <span class="st">"active"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_rxcuis</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span><span class="st">"bb_oral_rxcuis_search.rds"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">bb_oral_rxcuis</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 176 × 8</span></span></span>
-<span><span class="co">#&gt;    ingredient_rxcui product_rxcui name       tty   n_ingredients route dose_form</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 10600            198284        timolol 1… SCD               1 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 10600            198285        timolol 2… SCD               1 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 10600            198286        timolol 5… SCD               1 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 10600            250543        bendroflu… SCD               2 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 10600            310811        hydrochlo… SCD               2 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 10600            977949        amiloride… SCD               3 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1202             150750        atenolol … SBD               1 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1202             152414        atenolol … SBD               1 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1202             152916        atenolol … SCD               2 ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1202             153155        atenolol … SCD               2 ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 166 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: dose_form_group &lt;chr&gt;</span></span></span></code></pre></div>
-<p>To return a flat table of oral product RxCUIs and active NDCs:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_ndcs_search_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
-<span>    <span class="va">beta_blocker_names</span>,</span>
-<span>    return <span class="op">=</span> <span class="st">"ndc"</span>,</span>
-<span>    route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
-<span>    ndc_status <span class="op">=</span> <span class="st">"ACTIVE"</span>,</span>
-<span>    include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    concept_status <span class="op">=</span> <span class="st">"active"</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span>  <span class="va">bb_oral_ndcs_search</span> <span class="op">&lt;-</span> <span class="va">bb_oral_ndcs_search_raw</span></span>
-<span></span>
-<span>  <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="st">"ingredient_name"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">bb_oral_ndcs_search</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">bb_oral_ndcs_search</span> <span class="op">&lt;-</span> <span class="va">bb_oral_ndcs_search</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
-<span>        <span class="va">bb_ingredients</span> <span class="op">|&gt;</span></span>
-<span>          <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">ingredient_rxcui</span>, <span class="va">ingredient_name</span><span class="op">)</span>,</span>
-<span>        by <span class="op">=</span> <span class="st">"ingredient_rxcui"</span></span>
-<span>      <span class="op">)</span></span>
-<span>  <span class="op">}</span></span>
-<span></span>
-<span>  <span class="va">product_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"name"</span>,</span>
-<span>    <span class="st">"tty"</span>,</span>
-<span>    <span class="st">"route"</span>,</span>
-<span>    <span class="st">"dose_form"</span>,</span>
-<span>    <span class="st">"dose_form_group"</span></span>
-<span>  <span class="op">)</span></span>
-<span></span>
-<span>  <span class="va">missing_product_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/setops.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">product_cols</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">bb_oral_ndcs_search</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">missing_product_cols</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">bb_oral_ndcs_search</span> <span class="op">&lt;-</span> <span class="va">bb_oral_ndcs_search</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
-<span>        <span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
-<span>          <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
-<span>            <span class="va">ingredient_rxcui</span>,</span>
-<span>            <span class="va">product_rxcui</span>,</span>
-<span>            <span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html" class="external-link">all_of</a></span><span class="op">(</span><span class="va">missing_product_cols</span><span class="op">)</span></span>
-<span>          <span class="op">)</span>,</span>
-<span>        by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ingredient_rxcui"</span>, <span class="st">"product_rxcui"</span><span class="op">)</span></span>
-<span>      <span class="op">)</span></span>
-<span>  <span class="op">}</span></span>
-<span></span>
-<span>  <span class="va">bb_oral_ndcs_search</span> <span class="op">&lt;-</span> <span class="va">bb_oral_ndcs_search</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_ndcs_search</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span><span class="st">"bb_oral_ndcs_search.rds"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">bb_oral_ndcs_search</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4,670 × 10</span></span></span>
-<span><span class="co">#&gt;    ingredient_rxcui product_rxcui ndc11   ndc_status ingredient_name name  tty  </span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 149              998685        003781… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 149              998685        101350… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 149              998685        514070… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 149              998685        537460… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 149              998685        537460… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 149              998685        537460… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 149              998685        625590… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 149              998685        651620… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 149              998685        651620… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 149              998685        651620… ACTIVE     acebutolol      aceb… SCD  </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4,660 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 3 more variables: route &lt;chr&gt;, dose_form &lt;chr&gt;, dose_form_group &lt;chr&gt;</span></span></span></code></pre></div>
-<p>The raw <code>search_drug(return = "ndc")</code> output is
-intentionally compact. In this vignette, we join it back to the
-ingredient and product tables so that the displayed example includes
-readable ingredient names, product names, routes, and dose forms.</p>
-</div>
-<div class="section level2">
-<h2 id="returning-both-products-and-ndcs">Returning both products and NDCs<a class="anchor" aria-label="anchor" href="#returning-both-products-and-ndcs"></a>
-</h2>
-<p>If you want both the unique product RxCUI table and the expanded NDC
-table, use <code>return = "both"</code>.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_both</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
-<span>    <span class="va">beta_blocker_names</span>,</span>
-<span>    return <span class="op">=</span> <span class="st">"both"</span>,</span>
-<span>    route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
-<span>    ndc_status <span class="op">=</span> <span class="st">"ACTIVE"</span>,</span>
-<span>    include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    concept_status <span class="op">=</span> <span class="st">"active"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">bb_oral_both</span> <span class="op">&lt;-</span> <span class="fu">read_rxref_example</span><span class="op">(</span><span class="st">"bb_oral_both_search.rds"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">bb_oral_both</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "products" "ndcs"</span></span></code></pre></div>
-<p>This returns a list because the two tables have different grains:</p>
-<ul>
-<li>
-<code>products</code>: one row per product RxCUI;</li>
-<li>
-<code>ndcs</code>: one row per product RxCUI/NDC pair.</li>
-</ul>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_both</span><span class="op">$</span><span class="va">products</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 176 × 9</span></span></span>
-<span><span class="co">#&gt;    ingredient_rxcui ingredient_name product_rxcui name       tty   n_ingredients</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 149              acebutolol      998685        acebutolo… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 149              acebutolol      998689        acebutolo… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 149              acebutolol      998693        acebutolo… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 149              acebutolol      998694        acebutolo… SCD               2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 149              acebutolol      998695        acebutolo… SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1202             atenolol        150750        atenolol … SBD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1202             atenolol        152414        atenolol … SBD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1202             atenolol        152916        atenolol … SCD               2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1202             atenolol        153155        atenolol … SCD               2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1202             atenolol        197379        atenolol … SCD               1</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 166 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 3 more variables: route &lt;chr&gt;, dose_form &lt;chr&gt;, dose_form_group &lt;chr&gt;</span></span></span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_both</span><span class="op">$</span><span class="va">ndcs</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4,670 × 10</span></span></span>
-<span><span class="co">#&gt;    ingredient_rxcui ingredient_name product_rxcui name     tty   route dose_form</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 149              acebutolol      998685        acebuto… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4,660 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 3 more variables: dose_form_group &lt;chr&gt;, ndc11 &lt;chr&gt;, ndc_status &lt;chr&gt;</span></span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="suggested-qc-checks">Suggested QC checks<a class="anchor" aria-label="anchor" href="#suggested-qc-checks"></a>
-</h2>
-<p>When developing a study-specific medication list, it is good practice
-to review the resulting concepts before finalizing the cohort
-definition. Even if the package is working correctly, RxNorm concepts
-and source data may occasionally contain surprises for a specific study
-use case.</p>
-<p>The following are some examples.</p>
-<div class="section level3">
-<h3 id="check-whether-any-non-oral-product-names-remain">Check whether any non-oral product names remain<a class="anchor" aria-label="anchor" href="#check-whether-any-non-oral-product-names-remain"></a>
-</h3>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span></span>
-<span>    <span class="st">"Injection|Injectable|Ophthalmic|Topical|Transdermal|Nasal|Inhalation"</span>,</span>
-<span>    <span class="va">name</span>,</span>
-<span>    ignore.case <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span>  <span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 11</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 variables: ingredient_rxcui &lt;chr&gt;, product_rxcui &lt;chr&gt;, name &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   tty &lt;chr&gt;, n_ingredients &lt;int&gt;, input &lt;chr&gt;, ingredient_name &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   ingredient_tty &lt;chr&gt;, route &lt;chr&gt;, dose_form &lt;chr&gt;, dose_form_group &lt;chr&gt;</span></span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="check-the-observed-routes-and-dose-form-groups">Check the observed routes and dose-form groups<a class="anchor" aria-label="anchor" href="#check-the-observed-routes-and-dose-form-groups"></a>
-</h3>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">route</span>, <span class="va">dose_form_group</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
-<span><span class="co">#&gt;   route dose_form_group     n</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> ORAL  Oral Product      176</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="check-combination-products">Check combination products<a class="anchor" aria-label="anchor" href="#check-combination-products"></a>
-</h3>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n_ingredients</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">ingredient_name</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 2</span></span></span>
-<span><span class="co">#&gt;    ingredient_name     n</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> atenolol            8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> metoprolol          7</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> bisoprolol          6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> propranolol         4</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> timolol             3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> nadolol             2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> nebivolol           2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> acebutolol          1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> labetalol           1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> pindolol            1</span></span></code></pre></div>
+<p>For example, beta-blocker/thiazide combination products may be
+appropriate for a broad antihypertensive exposure definition but
+inappropriate for a study specifically evaluating beta-blocker
+monotherapy.</p>
 </div>
 <div class="section level3">
 <h3 id="check-products-without-active-ndcs">Check products without active NDCs<a class="anchor" aria-label="anchor" href="#check-products-without-active-ndcs"></a>
 </h3>
-<p>Some product RxCUIs may not map to active NDCs.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<p>Some valid RxNorm product concepts may not map to a current active
+NDC.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb_oral_products</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter-joins.html" class="external-link">anti_join</a></span><span class="op">(</span></span>
 <span>    <span class="va">bb_oral_ndcs</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">ndc11</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">product_rxcui</span><span class="op">)</span>,</span>
 <span>    by <span class="op">=</span> <span class="st">"product_rxcui"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -745,60 +478,252 @@ use case.</p>
 <span>    <span class="va">tty</span>,</span>
 <span>    <span class="va">route</span>,</span>
 <span>    <span class="va">dose_form</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 41 × 6</span></span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">ingredient_name</span>, <span class="va">name</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 43 × 6</span></span></span>
 <span><span class="co">#&gt;    ingredient_name product_rxcui name                      tty   route dose_form</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> acebutolol      998693        acebutolol 100 MG Oral C… SCD   ORAL  Oral Cap…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> acebutolol      998694        acebutolol 200 MG / hydr… SCD   ORAL  Oral Tab…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> acebutolol      998695        acebutolol 400 MG Oral T… SCD   ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> atenolol        152916        atenolol 50 MG / chlorth… SCD   ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> atenolol        977920        amiloride hydrochloride … SCD   ORAL  Oral Cap…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> atenolol        153155        atenolol 25 MG / bendrof… SCD   ORAL  Oral Cap…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> atenolol        393275        atenolol 50 MG / nifedip… SCD   ORAL  Extended…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> atenolol        755528        atenolol 5 MG/ML Oral So… SCD   ORAL  Oral Sol…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> atenolol        977920        amiloride hydrochloride … SCD   ORAL  Oral Cap…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> atenolol        755528        atenolol 5 MG/ML Oral So… SCD   ORAL  Oral Sol…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> atenolol        152916        atenolol 50 MG / chlorth… SCD   ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> atenolol        393275        atenolol 50 MG / nifedip… SCD   ORAL  Extended…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> bisoprolol      865154        bisoprolol fumarate 1.25… SCD   ORAL  Oral Tab…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> bisoprolol      865157        bisoprolol fumarate 3.75… SCD   ORAL  Oral Tab…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 31 more rows</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 33 more rows</span></span></span></code></pre></div>
+<p>Whether products without active NDCs matter depends on the
+identifiers available in the study data.</p>
+</div>
+<div class="section level3">
+<h3 id="summarize-the-final-definition">Summarize the final definition<a class="anchor" aria-label="anchor" href="#summarize-the-final-definition"></a>
+</h3>
+<p>Finally, summarize the number of unique products and NDCs associated
+with each ingredient:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_ndcs</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">ingredient_name</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
+<span>    n_products <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">product_rxcui</span><span class="op">)</span>,</span>
+<span>    n_ndcs <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">ndc11</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">ingredient_name</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 13 × 3</span></span></span>
+<span><span class="co">#&gt;    ingredient_name n_products n_ndcs</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> acebutolol               2     21</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> atenolol                10    545</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> betaxolol                2     11</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> bisoprolol               9    273</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> carvedilol              16    719</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> labetalol                7    315</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> metoprolol              31   <span style="text-decoration: underline;">1</span>666</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> nadolol                  5    180</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> nebivolol                9    278</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> pindolol                 2     21</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> propranolol             18    612</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> sotalol                 19    181</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> timolol                  3     11</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
+<h2 id="a-compact-alternative-with-search_drug">A compact alternative with <code>search_drug()</code><a class="anchor" aria-label="anchor" href="#a-compact-alternative-with-search_drug"></a>
 </h2>
-<p>This vignette demonstrated how to build a route-specific medication
-list, with oral beta-blockers as an example, using
-<code>rxref</code>.</p>
-<p>The key steps are:</p>
-<ol style="list-style-type: decimal">
-<li>
-<code><a href="../reference/find_ingredients.html">find_ingredients()</a></code> to resolve drug names to ingredient
-RxCUIs;</li>
-<li>
-<code><a href="../reference/products_for_ingredients.html">products_for_ingredients()</a></code> to expand ingredients to
-product RxCUIs;</li>
-<li>
-<code><a href="../reference/filter_products_by_route.html">filter_products_by_route()</a></code> to retain products for the
-route of interest;</li>
-<li>
-<code><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc()</a></code> to obtain NDCs; or</li>
-<li>
-<code><a href="../reference/search_drug.html">search_drug()</a></code> for a compact end-to-end workflow.</li>
-</ol>
-<p>For drug classes with products available through multiple routes,
-route filtering is an important quality-control step before mapping to
-NDCs or using the resulting list in pharmacoepidemiologic analyses.</p>
-<p>Users should also distinguish between two separate choices:</p>
+<p>Once the explicit workflow is understood, <code><a href="../reference/search_drug.html">search_drug()</a></code>
+can combine ingredient resolution, product expansion, route filtering,
+and NDC mapping in a single call.</p>
+<p>Using <code>return = "both"</code> is particularly useful here
+because the product table and the NDC table have different grains.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
+<span>  <span class="va">beta_blocker_names</span>,</span>
+<span>  return <span class="op">=</span> <span class="st">"both"</span>,</span>
+<span>  route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
+<span>  ndc_status <span class="op">=</span> <span class="st">"ACTIVE"</span>,</span>
+<span>  include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  concept_status <span class="op">=</span> <span class="st">"active"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bb_oral</span><span class="op">$</span><span class="va">products</span></span>
+<span><span class="va">bb_oral</span><span class="op">$</span><span class="va">ndcs</span></span></code></pre></div>
+<p>The result is a list with separate product and NDC tables:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">bb_oral</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "products" "ndcs"</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral</span><span class="op">$</span><span class="va">products</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">ingredient_rxcui</span>, <span class="va">tty</span>, <span class="va">name</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 20 × 8</span></span></span>
+<span><span class="co">#&gt;    ingredient_rxcui product_rxcui name       tty   n_ingredients route dose_form</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 10600            977949        amiloride… SCD               3 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 10600            250543        bendroflu… SCD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 10600            310811        hydrochlo… SCD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 10600            198284        timolol 1… SCD               1 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 10600            198285        timolol 2… SCD               1 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 10600            198286        timolol 5… SCD               1 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1202             746023        atenolol … SBD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1202             201322        atenolol … SBD               1 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1202             150750        atenolol … SBD               1 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1202             746030        atenolol … SBD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> 1202             152414        atenolol … SBD               1 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> 1202             977920        amiloride… SCD               3 ORAL  Oral Cap…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> 1202             197382        atenolol … SCD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> 1202             197379        atenolol … SCD               1 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> 1202             153155        atenolol … SCD               2 ORAL  Oral Cap…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> 1202             197380        atenolol … SCD               1 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> 1202             755528        atenolol … SCD               1 ORAL  Oral Sol…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> 1202             152916        atenolol … SCD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">19</span> 1202             197383        atenolol … SCD               2 ORAL  Oral Tab…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">20</span> 1202             393275        atenolol … SCD               2 ORAL  Extended…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: dose_form_group &lt;chr&gt;</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral</span><span class="op">$</span><span class="va">ndcs</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">ingredient_rxcui</span>, <span class="va">product_rxcui</span>, <span class="va">ndc11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 20 × 4</span></span></span>
+<span><span class="co">#&gt;    ingredient_rxcui product_rxcui ndc11       ndc_status</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 10600            198284        00378022101 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 10600            198284        16571022401 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 10600            198284        73152003001 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 10600            198285        00378071501 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 10600            198285        13811062010 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 10600            198285        16571022501 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 10600            198285        73152003101 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 10600            198286        00378005501 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 10600            198286        13811061810 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 10600            198286        16571022301 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> 10600            198286        73152002901 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> 1202             150750        24979024407 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> 1202             150750        52427042990 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> 1202             152414        24979024507 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> 1202             152414        52427043090 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> 1202             152414        52959028030 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> 1202             152414        55289025430 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> 1202             197379        00093075301 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">19</span> 1202             197379        00093075305 ACTIVE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">20</span> 1202             197379        00378075701 ACTIVE</span></span></code></pre></div>
+<p>The shortcut is useful when the standard workflow matches the study
+definition. The explicit approach remains preferable when users need to
+inspect route heterogeneity before filtering, modify the product set, or
+document study-specific inclusion and exclusion decisions.</p>
+</div>
+<div class="section level2">
+<h2 id="adapting-the-workflow">Adapting the workflow<a class="anchor" aria-label="anchor" href="#adapting-the-workflow"></a>
+</h2>
+<p>The example above represents one particular route-specific medication
+definition. Several common modifications are possible.</p>
+<div class="section level3">
+<h3 id="filter-by-route-during-product-expansion">Filter by route during product expansion<a class="anchor" aria-label="anchor" href="#filter-by-route-during-product-expansion"></a>
+</h3>
+<p>When users already know the intended route and do not need to inspect
+the unfiltered product universe first,
+<code><a href="../reference/products_for_ingredients.html">products_for_ingredients()</a></code> can apply the route restriction
+directly:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_products_direct</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
+<span>  <span class="va">bb_ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
+<span>  ttys <span class="op">=</span> <span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"default"</span><span class="op">)</span>,</span>
+<span>  route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
+<span>  include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  concept_status <span class="op">=</span> <span class="st">"active"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>This uses the same route-filtering infrastructure but provides a more
+compact workflow.</p>
+</div>
+<div class="section level3">
+<h3 id="exclude-fixed-dose-combination-products">Exclude fixed-dose combination products<a class="anchor" aria-label="anchor" href="#exclude-fixed-dose-combination-products"></a>
+</h3>
+<p>If the study should include beta-blocker single drug entities (i.e.,
+not combination products) only, set
+<code>include_combos = FALSE</code>:</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_single_products</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
+<span>  <span class="va">bb_ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
+<span>  ttys <span class="op">=</span> <span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"default"</span><span class="op">)</span>,</span>
+<span>  route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
+<span>  include_combos <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  concept_status <span class="op">=</span> <span class="st">"active"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Alternatively, retain combination products initially, review them,
+and apply study-specific exclusions after product expansion.</p>
+</div>
+<div class="section level3">
+<h3 id="include-historical-rxnorm-concepts-and-ndc-associations">Include historical RxNorm concepts and NDC associations<a class="anchor" aria-label="anchor" href="#include-historical-rxnorm-concepts-and-ndc-associations"></a>
+</h3>
+<p>For older study periods, users may need concepts that are no longer
+active in the current RxNorm release.</p>
+<p>Historical RxNorm product concepts can be included with:</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_products_historical</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
+<span>  <span class="va">bb_ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
+<span>  ttys <span class="op">=</span> <span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"default"</span><span class="op">)</span>,</span>
+<span>  include_combos <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  concept_status <span class="op">=</span> <span class="st">"active_and_historical"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">bb_oral_products_historical</span> <span class="op">&lt;-</span> <span class="va">bb_products_historical</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/filter_products_by_route.html">filter_products_by_route</a></span><span class="op">(</span>route <span class="op">=</span> <span class="st">"ORAL"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/filter_products_by_route.html">filter_products_by_route()</a></code> can use historical RxCUI
+metadata as a fallback when the product table contains non-active
+concepts. Even so, historical route assignments deserve careful review
+because clinical attribute information may be less complete for older
+concepts.</p>
+<p>Historical NDC associations are a separate choice. Retrieve them with
+the <code>history</code> argument in
+<code><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc()</a></code>:</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bb_oral_ndcs_historical</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">bb_oral_products_historical</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span>,</span>
+<span>  history <span class="op">=</span> <span class="st">"all"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The distinction is important:</p>
 <ul>
 <li>
-<code>concept_status</code> controls whether active or historical
-RxNorm concepts are included.</li>
+<code>concept_status</code> determines whether product expansion
+includes historical RxNorm concepts;</li>
 <li>
-<code>status</code> or <code>ndc_status</code> controls which NDC
-status categories are returned.</li>
+<code>history</code> determines whether RxCUI-to-NDC mapping uses
+current or historical NDC associations; and</li>
+<li>
+<code>status</code> filters NDCs after those associations have been
+retrieved.</li>
 </ul>
-<p>For reproducible research, save the final product list, NDC list,
-package version, and API-derived outputs used in the analytic
-workflow.</p>
+<p><code><a href="../reference/search_drug.html">search_drug()</a></code> is convenient for current route-specific
+medication lists, but it does not currently expose the NDC
+<code>history</code> argument. For studies requiring historical NDC
+associations, use the explicit <code><a href="../reference/products_for_ingredients.html">products_for_ingredients()</a></code>
+plus <code><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc()</a></code> workflow.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="finalizing-a-route-specific-medication-definition">Finalizing a route-specific medication definition<a class="anchor" aria-label="anchor" href="#finalizing-a-route-specific-medication-definition"></a>
+</h2>
+<p>Before using a route-specific medication list in an analysis,
+consider:</p>
+<ul>
+<li>whether the ingredient list matches the intended clinical
+definition;</li>
+<li>whether the selected route is represented correctly across
+products;</li>
+<li>whether combination products should be included;</li>
+<li>whether the default product TTYs are sufficient;</li>
+<li>whether products without route information require manual
+review;</li>
+<li>whether products without active NDCs matter for the source data;
+and</li>
+<li>whether the study period requires historical RxNorm concepts or NDC
+associations.</li>
+</ul>
+<p>For reproducible research, save the final product and NDC tables used
+in the analysis rather than rebuilding them each time. It is also useful
+to record the <code>rxref</code> version and the date on which the
+medication definition was generated.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -811,7 +736,7 @@ workflow.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

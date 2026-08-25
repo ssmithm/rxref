@@ -4,30 +4,30 @@
 
 Suppose we need to identify users of GLP-1 receptor agonists and related
 incretin-based therapies from EHR prescribing data, pharmacy claims
-data, or both. To accomplish this, we need a medication list that
-includes relevant RxNorm product concepts and, when available,
-corresponding NDCs.
+data, or both. To accomplish this, we need a reproducible medication
+definition that identifies relevant RxNorm product concepts and, when
+needed, corresponding National Drug Codes (NDCs).
 
-This vignette walks through two approaches:
+This case study builds that definition in four steps:
 
-1.  a transparent step-by-step workflow that starts with a curated list
-    of ingredient names; and
-2.  a compact workflow using
-    [`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md).
+1.  define the ingredients of interest;
+2.  resolve the ingredient names to RxNorm ingredient RxCUIs;
+3.  expand those ingredients to product-level RxNorm concepts; and
+4.  map the final product concepts to NDCs.
 
-The examples use precomputed data by default so the vignette can be
-built without querying the live RxNorm API. To rebuild the examples with
-live API calls, set:
+We first work through these steps explicitly. At the end, we show how
+[`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md)
+can provide a more compact version of the same common workflow.
 
-``` r
+The displayed results use precomputed data bundled with `rxref`, so the
+vignette can be built without requiring access to the live RxNorm API.
+The code shown below is the code users can run interactively to generate
+the results from the current API.
 
-Sys.setenv(RXREF_BUILD_VIGNETTES_ONLINE = "true")
-```
+## Define the ingredient list
 
-## Defining the ingredient list
-
-For this example, we start with a prespecified list of GLP-1 receptor
-agonists and related incretin-based therapies:
+For this example, we start with a list of GLP-1 receptor agonists and
+related incretin-based therapies:
 
 - exenatide
 - liraglutide
@@ -37,13 +37,14 @@ agonists and related incretin-based therapies:
 - semaglutide
 - tirzepatide
 
-Tirzepatide is included here because many applied studies group it with
-GLP-1-based incretin therapies, although it is a dual GIP/GLP-1 receptor
-agonist rather than a GLP-1 receptor agonist alone.
+Tirzepatide is included because many applied studies group it with
+GLP-1-based incretin therapies, even though it is technically a dual
+GIP/GLP-1 receptor agonist rather than a standalone GLP-1 receptor
+agonist.
 
 ``` r
 
-glp1.names <- c(
+glp1_names <- c(
   "semaglutide",
   "exenatide",
   "liraglutide",
@@ -52,161 +53,167 @@ glp1.names <- c(
   "albiglutide",
   "tirzepatide"
 )
+
+glp1_names
+#> [1] "semaglutide"  "exenatide"    "liraglutide"  "lixisenatide" "dulaglutide" 
+#> [6] "albiglutide"  "tirzepatide"
 ```
 
-## Option 1: Step-by-step medication list construction
+## Step 1: Identify ingredient RxCUIs
 
-### Identify ingredient RxCUIs
-
-First, we use
 [`find_ingredients()`](https://www.stevenmsmith.org/rxref/reference/find_ingredients.md)
-to identify ingredient-level RxCUIs. For this example, we retain
-concepts with TTY = `"IN"`, corresponding to RxNorm ingredient concepts.
-You can see available TTY values and descriptions with
-[`tty_catalogue()`](https://www.stevenmsmith.org/rxref/reference/tty_catalogue.md).
+resolves free-text drug names to ingredient-level RxNorm concepts. For
+this medication definition, we retain TTY = `"IN"`, which represents the
+base RxNorm ingredient concept.
 
 ``` r
 
-if (run_live) {
-  glp1.ings <- find_ingredients(glp1.names) |>
-    filter(tty == "IN") |>
-    distinct(
-      input,
-      ingredient_rxcui = rxcui,
-      ingredient_name = name,
-      ingredient_tty = tty
-    )
-} else {
-  glp1.ings <- read_rxref_example("glp1_ings.rds")
-}
+glp1_ingredients <- find_ingredients(glp1_names) |>
+  filter(tty == "IN") |>
+  distinct(
+    input,
+    ingredient_rxcui = rxcui,
+    ingredient_name = name,
+    ingredient_tty = tty
+  )
 
-glp1.ings
-#> # A tibble: 7 × 4
-#>   input        ingredient_rxcui ingredient_name ingredient_tty
-#>   <chr>        <chr>            <chr>           <chr>         
-#> 1 albiglutide  1534763          albiglutide     IN            
-#> 2 dulaglutide  1551291          dulaglutide     IN            
-#> 3 exenatide    60548            exenatide       IN            
-#> 4 liraglutide  475968           liraglutide     IN            
-#> 5 lixisenatide 1440051          lixisenatide    IN            
-#> 6 semaglutide  1991302          semaglutide     IN            
-#> 7 tirzepatide  2601723          tirzepatide     IN
+glp1_ingredients
 ```
 
-### Expand ingredients to product RxCUIs
+    #> # A tibble: 7 × 4
+    #>   input        ingredient_rxcui ingredient_name ingredient_tty
+    #>   <chr>        <chr>            <chr>           <chr>         
+    #> 1 semaglutide  1991302          semaglutide     IN            
+    #> 2 exenatide    60548            exenatide       IN            
+    #> 3 liraglutide  475968           liraglutide     IN            
+    #> 4 lixisenatide 1440051          lixisenatide    IN            
+    #> 5 dulaglutide  1551291          dulaglutide     IN            
+    #> 6 albiglutide  1534763          albiglutide     IN            
+    #> 7 tirzepatide  2601723          tirzepatide     IN
 
-Next, we use
+This step is useful for checking that each study-defined ingredient maps
+to the intended RxNorm concept before expanding the definition to
+products. For unfamiliar term types,
+[`tty_catalogue()`](https://www.stevenmsmith.org/rxref/reference/tty_catalogue.md)
+provides a description of common RxNorm TTYs.
+
+## Step 2: Expand ingredients to product RxCUIs
+
+Next,
 [`products_for_ingredients()`](https://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
-to identify product concepts related to the ingredient RxCUIs.
+identifies product concepts that contain the selected ingredients.
 
-By default, this workflow focuses on active RxNorm concepts. This is
-usually appropriate for current medication list construction. For
-studies covering older calendar periods, users may want to include
-historical RxNorm concepts as well.
+By default, `product_ttys("default")` includes the product-focused TTYs
+SCD, SBD, GPCK, and BPCK. These are generally the most useful concepts
+when the goal is to identify prescribable or dispensable products and
+eventually map them to NDCs.
 
 ``` r
 
 product_ttys("default")
 #> [1] "SCD"  "SBD"  "GPCK" "BPCK"
-product_ttys("extended_product")
-#>  [1] "SCD"   "SBD"   "GPCK"  "BPCK"  "SCDG"  "SBDG"  "SCDF"  "SBDF"  "SBDFP"
-#> [10] "SCDFP" "SCDGP"
 ```
 
-The default product TTY set is intended to capture product concepts that
-are commonly useful for medication list construction and NDC mapping. A
-broader product-related set is available with
-`product_ttys("extended_product")`. Users can also supply their own
-character vector of TTYs.
-
-In this example, we include combination products. That means products
-containing a GLP-1-related ingredient plus one or more other ingredients
-may be retained.
+For this example, we retain fixed-dose combination products and use only
+currently active RxNorm concepts.
 
 ``` r
 
-if (run_live) {
-  glp1.prods <- products_for_ingredients(
-    glp1.ings$ingredient_rxcui,
-    ttys = product_ttys("default"),
-    include_combos = TRUE,
-    concept_status = "active"
-  )
-} else {
-  glp1.prods <- read_rxref_example("glp1_prods.rds")
-}
-
-glp1.prods |>
-  head(30)
-#> # A tibble: 30 × 5
-#>    ingredient_rxcui product_rxcui name                       tty   n_ingredients
-#>    <chr>            <chr>         <chr>                      <chr>         <int>
-#>  1 1440051          1858995       3 ML insulin glargine 100… SCD               2
-#>  2 1440051          1859000       3 ML insulin glargine 100… SBD               2
-#>  3 1534763          1534800       0.5 ML albiglutide 60 MG/… SCD               1
-#>  4 1534763          1534820       0.5 ML albiglutide 100 MG… SCD               1
-#>  5 1551291          1551295       0.5 ML dulaglutide 1.5 MG… SCD               1
-#>  6 1551291          1551300       0.5 ML dulaglutide 1.5 MG… SBD               1
-#>  7 1551291          1551304       0.5 ML dulaglutide 3 MG/M… SCD               1
-#>  8 1551291          1551306       0.5 ML dulaglutide 3 MG/M… SBD               1
-#>  9 1551291          2395777       0.5 ML dulaglutide 6 MG/M… SCD               1
-#> 10 1551291          2395779       0.5 ML dulaglutide 6 MG/M… SBD               1
-#> # ℹ 20 more rows
-```
-
-Combination products may appear when `include_combos = TRUE`. Depending
-on the function, ingredient fields for combination products may be
-summarized across ingredients, while product-level rows remain one row
-per product concept. Users should inspect ingredient fields and
-`n_ingredients` before deciding whether to include or exclude fixed-dose
-combination products.
-
-### Include historical RxNorm concepts when needed
-
-For historical studies, formulary reconstruction, or claims data
-spanning older calendar periods, users may want to include both active
-and historical RxNorm concepts.
-
-``` r
-
-glp1.prods_historical <- products_for_ingredients(
-  glp1.ings$ingredient_rxcui,
+glp1_products <- products_for_ingredients(
+  glp1_ingredients$ingredient_rxcui,
   ttys = product_ttys("default"),
   include_combos = TRUE,
-  concept_status = "active_and_historical"
+  concept_status = "active"
+)
+
+glp1_products
+```
+
+    #> # A tibble: 30 × 5
+    #>    ingredient_rxcui product_rxcui name                       tty   n_ingredients
+    #>    <chr>            <chr>         <chr>                      <chr>         <int>
+    #>  1 1440051          1859000       3 ML insulin glargine 100… SBD               2
+    #>  2 1440051          1858995       3 ML insulin glargine 100… SCD               2
+    #>  3 1534763          1534820       0.5 ML albiglutide 100 MG… SCD               1
+    #>  4 1534763          1534800       0.5 ML albiglutide 60 MG/… SCD               1
+    #>  5 1551291          1551300       0.5 ML dulaglutide 1.5 MG… SBD               1
+    #>  6 1551291          1551306       0.5 ML dulaglutide 3 MG/M… SBD               1
+    #>  7 1551291          2395779       0.5 ML dulaglutide 6 MG/M… SBD               1
+    #>  8 1551291          2395785       0.5 ML dulaglutide 9 MG/M… SBD               1
+    #>  9 1551291          1551295       0.5 ML dulaglutide 1.5 MG… SCD               1
+    #> 10 1551291          1551304       0.5 ML dulaglutide 3 MG/M… SCD               1
+    #> # ℹ 20 more rows
+
+### Inspect the product set
+
+Before mapping products to NDCs, it is useful to inspect what was
+returned. For example, we can summarize the product TTYs:
+
+``` r
+
+glp1_products |>
+  count(tty, sort = TRUE)
+#> # A tibble: 2 × 2
+#>   tty       n
+#>   <chr> <int>
+#> 1 SBD      82
+#> 2 SCD      55
+```
+
+Because `include_combos = TRUE`, the product set may also contain
+fixed-dose combination products. `n_ingredients` can be used to identify
+them:
+
+``` r
+
+glp1_products |>
+  filter(n_ingredients > 1) |>
+  select(ingredient_rxcui, product_rxcui, name, tty, n_ingredients) |>
+  arrange(name) |>
+  head(20)
+#> # A tibble: 4 × 5
+#>   ingredient_rxcui product_rxcui name                        tty   n_ingredients
+#>   <chr>            <chr>         <chr>                       <chr>         <int>
+#> 1 475968           1860167       3 ML insulin degludec 100 … SCD               2
+#> 2 475968           1860172       3 ML insulin degludec 100 … SBD               2
+#> 3 1440051          1858995       3 ML insulin glargine 100 … SCD               2
+#> 4 1440051          1859000       3 ML insulin glargine 100 … SBD               2
+```
+
+Whether these products belong in the final exposure definition depends
+on the study. The important point is to make that decision explicit
+vs. assuming that every product containing an ingredient of interest
+should automatically be retained.
+
+## Step 3: Map product RxCUIs to NDCs
+
+If the exposure data contain NDCs, the next step is to map the selected
+product RxCUIs to corresponding NDCs.
+
+Here we request currently active NDC associations and retain NDCs whose
+reported status is `"ACTIVE"`.
+
+``` r
+
+glp1_ndc_map <- map_rxcui_to_ndc(
+  unique(glp1_products$product_rxcui),
+  history = "active",
+  status = "ACTIVE"
 )
 ```
 
-Historical concepts can be useful when reconstructing medication
-exposure during older study periods. However, some historical concepts
-may have less complete clinical attribute information than active
-concepts. Users should review route, dose form, ingredient count, and
-NDC mappings carefully when including historical concepts.
-
-### Map product RxCUIs to NDCs
-
-Next, we identify NDCs associated with the product RxCUIs. Not all
-RxCUIs map to NDCs, so some product concepts may not have corresponding
-NDC values.
+We can then join the NDC mapping back to the product and ingredient
+information to create a study-friendly medication list.
 
 ``` r
 
-if (run_live) {
-  glp1.ndc.map <- map_rxcui_to_ndc(
-    unique(glp1.prods$product_rxcui),
-    status = "ACTIVE"
-  )
-} else {
-  glp1.ndc.map <- read_rxref_example("glp1_ndc_map.rds")
-}
-
-glp1.ndcs <- glp1.ndc.map |>
+glp1_ndcs <- glp1_ndc_map |>
   left_join(
-    glp1.prods,
+    glp1_products,
     by = c("rxcui" = "product_rxcui")
   ) |>
   left_join(
-    glp1.ings |>
+    glp1_ingredients |>
       select(ingredient_rxcui, ingredient_name),
     by = "ingredient_rxcui"
   ) |>
@@ -216,183 +223,256 @@ glp1.ndcs <- glp1.ndc.map |>
     product_rxcui = rxcui,
     ndc11,
     ndc_status,
-    name,
+    product_name = name,
     tty
   ) |>
   arrange(ingredient_name, product_rxcui, ndc11)
 
-glp1.ndcs |>
+glp1_ndcs |>
   head(30)
 #> # A tibble: 30 × 7
-#>    ingredient_rxcui ingredient_name product_rxcui ndc11   ndc_status name  tty  
-#>    <chr>            <chr>           <chr>         <chr>   <chr>      <chr> <chr>
-#>  1 1551291          dulaglutide     1551300       000021… ACTIVE     0.5 … SBD  
-#>  2 1551291          dulaglutide     1551300       000021… ACTIVE     0.5 … SBD  
-#>  3 1551291          dulaglutide     1551300       000021… ACTIVE     0.5 … SBD  
-#>  4 1551291          dulaglutide     1551300       500903… ACTIVE     0.5 … SBD  
-#>  5 1551291          dulaglutide     1551300       500906… ACTIVE     0.5 … SBD  
-#>  6 1551291          dulaglutide     1551306       000021… ACTIVE     0.5 … SBD  
-#>  7 1551291          dulaglutide     1551306       000021… ACTIVE     0.5 … SBD  
-#>  8 1551291          dulaglutide     1551306       000021… ACTIVE     0.5 … SBD  
-#>  9 1551291          dulaglutide     1551306       500903… ACTIVE     0.5 … SBD  
-#> 10 1551291          dulaglutide     1551306       500906… ACTIVE     0.5 … SBD  
+#>    ingredient_rxcui ingredient_name product_rxcui ndc11  ndc_status product_name
+#>    <chr>            <chr>           <chr>         <chr>  <chr>      <chr>       
+#>  1 1551291          dulaglutide     1551300       00002… ACTIVE     0.5 ML dula…
+#>  2 1551291          dulaglutide     1551300       00002… ACTIVE     0.5 ML dula…
+#>  3 1551291          dulaglutide     1551300       00002… ACTIVE     0.5 ML dula…
+#>  4 1551291          dulaglutide     1551300       50090… ACTIVE     0.5 ML dula…
+#>  5 1551291          dulaglutide     1551300       50090… ACTIVE     0.5 ML dula…
+#>  6 1551291          dulaglutide     1551306       00002… ACTIVE     0.5 ML dula…
+#>  7 1551291          dulaglutide     1551306       00002… ACTIVE     0.5 ML dula…
+#>  8 1551291          dulaglutide     1551306       00002… ACTIVE     0.5 ML dula…
+#>  9 1551291          dulaglutide     1551306       50090… ACTIVE     0.5 ML dula…
+#> 10 1551291          dulaglutide     1551306       50090… ACTIVE     0.5 ML dula…
 #> # ℹ 20 more rows
+#> # ℹ 1 more variable: tty <chr>
 ```
 
-At this point, we have a product-level and NDC-level medication list
-that can be used to query EHR prescribing data, pharmacy dispensing
-data, or pharmacy claims data.
+At this point, we have two useful study resources:
 
-## Option 2: Use `search_drug()` for a compact workflow
+- `glp1_products`, for data represented with RxCUIs (EHR prescribing
+  data, often); and
+- `glp1_ndcs`, for data represented with NDCs (pharmacy fill data,
+  often).
 
-The same goal can often be accomplished in one step with
-[`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md).
-This function combines ingredient searching, product expansion, optional
-route filtering, and optional NDC mapping.
+Keeping both tables can be useful when the same medication definition is
+applied across multiple data sources.
 
-Suppose we want NDCs for the same ingredient list, and we want to
-include active, obsolete, and unspecified NDCs.
+## Step 4: Perform a few quality checks
+
+Medication-list construction should generally include some inspection of
+the final product and NDC sets. Even if you’re confident you’ve done
+everything right, RxNorm is occasionally imperfect and sometimes makes
+weird connections between ingredients and products, etc…
+
+For example, some basic QC might include a count the number of unique
+products and NDCs represented by each ingredient, to make sure these
+seem plausible:
 
 ``` r
 
-if (run_live) {
-  alt.glp1.ndcs <- search_drug(
-    term = glp1.names,
-    return = "ndc",
-    concept_status = "active",
-    ndc_status = c("ACTIVE", "OBSOLETE", "UNSPECIFIED")
-  )
-} else {
-  alt.glp1.ndcs <- read_rxref_example("alt_glp1_ndc.rds")
-}
-
-alt.glp1.ndcs |>
-  arrange(ingredient_name, product_rxcui, ndc11) |>
-  head(30)
-#> # A tibble: 30 × 7
-#>    ingredient_rxcui ingredient_name product_rxcui product_name product_tty ndc11
-#>    <chr>            <chr>           <chr>         <chr>        <chr>       <chr>
-#>  1 1551291          dulaglutide     1551300       0.5 ML dula… SBD         0000…
-#>  2 1551291          dulaglutide     1551300       0.5 ML dula… SBD         0000…
-#>  3 1551291          dulaglutide     1551300       0.5 ML dula… SBD         0000…
-#>  4 1551291          dulaglutide     1551300       0.5 ML dula… SBD         5009…
-#>  5 1551291          dulaglutide     1551300       0.5 ML dula… SBD         5009…
-#>  6 1551291          dulaglutide     1551306       0.5 ML dula… SBD         0000…
-#>  7 1551291          dulaglutide     1551306       0.5 ML dula… SBD         0000…
-#>  8 1551291          dulaglutide     1551306       0.5 ML dula… SBD         0000…
-#>  9 1551291          dulaglutide     1551306       0.5 ML dula… SBD         5009…
-#> 10 1551291          dulaglutide     1551306       0.5 ML dula… SBD         5009…
-#> # ℹ 20 more rows
-#> # ℹ 1 more variable: ndc_status <chr>
+glp1_ndcs |>
+  group_by(ingredient_name) |>
+  summarise(
+    n_products = n_distinct(product_rxcui),
+    n_ndcs = n_distinct(ndc11, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  arrange(ingredient_name)
+#> # A tibble: 6 × 3
+#>   ingredient_name n_products n_ndcs
+#>   <chr>                <int>  <int>
+#> 1 dulaglutide              4     19
+#> 2 exenatide                5      7
+#> 3 liraglutide              5     51
+#> 4 lixisenatide             1      4
+#> 5 semaglutide             23     53
+#> 6 tirzepatide             48     94
 ```
 
-Here, `concept_status` controls whether active or historical RxNorm
-concepts are considered. The `ndc_status` argument controls which NDC
-status categories are returned.
-
-For example, to include historical RxNorm concepts and broader NDC
-status categories, use:
+We can also identify product concepts for which no active NDC was found:
 
 ``` r
 
-search_drug(
-  term = glp1.names,
-  return = "ndc",
-  concept_status = "active_and_historical",
-  ndc_status = c("ACTIVE", "OBSOLETE", "UNSPECIFIED")
-)
+glp1_products |>
+  anti_join(
+    glp1_ndcs |>
+      filter(!is.na(ndc11)) |>
+      distinct(product_rxcui),
+    by = "product_rxcui"
+  ) |>
+  select(ingredient_rxcui, product_rxcui, name, tty, n_ingredients) |>
+  arrange(name)
+#> # A tibble: 51 × 5
+#>    ingredient_rxcui product_rxcui name                       tty   n_ingredients
+#>    <chr>            <chr>         <chr>                      <chr>         <int>
+#>  1 1991302          2619152       0.25 MG, 0.5 MG Dose 3 ML… SCD               1
+#>  2 1534763          1534820       0.5 ML albiglutide 100 MG… SCD               1
+#>  3 1534763          1534800       0.5 ML albiglutide 60 MG/… SCD               1
+#>  4 1551291          1551295       0.5 ML dulaglutide 1.5 MG… SCD               1
+#>  5 1551291          1551304       0.5 ML dulaglutide 3 MG/M… SCD               1
+#>  6 1551291          2395777       0.5 ML dulaglutide 6 MG/M… SCD               1
+#>  7 1551291          2395783       0.5 ML dulaglutide 9 MG/M… SCD               1
+#>  8 1991302          2553501       0.5 ML semaglutide 0.5 MG… SCD               1
+#>  9 1991302          2553601       0.5 ML semaglutide 1 MG/M… SCD               1
+#> 10 1991302          2553802       0.5 ML semaglutide 2 MG/M… SCD               1
+#> # ℹ 41 more rows
 ```
 
-This can be useful for studies spanning older calendar periods, but
-users should carefully inspect the resulting concepts and NDCs before
-finalizing an exposure definition.
+A product without an NDC is not necessarily an error. RxNorm includes
+concepts that do not have a direct current NDC mapping (sometimes no
+company is marketing a drug, etc…). The appropriate response depends on
+the identifiers available in the study data and the intended exposure
+definition.
 
-## Comparing the two approaches
+## A compact alternative with `search_drug()`
 
-The step-by-step approach is more verbose, but it makes each decision
-explicit:
-
-1.  identify ingredient RxCUIs;
-2.  expand ingredients to product concepts;
-3.  decide whether to include combination products;
-4.  decide whether to include active concepts only or active and
-    historical concepts;
-5.  map product RxCUIs to NDCs.
-
-The
+Once the underlying workflow is understood,
 [`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md)
-approach is more compact and is useful for common workflows where users
-want a product list or NDC list from one or more drug names.
+can provide a convenient shortcut. It combines ingredient resolution,
+product expansion, and optional NDC mapping.
 
-To compare the NDCs from the step-by-step workflow against the compact
-workflow:
+For the same current-concept/current-NDC definition used above:
 
 ``` r
 
-glp1.ndcs |>
-  filter(!is.na(ndc11)) |>
-  arrange(ingredient_name, product_rxcui, ndc11) |>
-  head(30)
-#> # A tibble: 30 × 7
-#>    ingredient_rxcui ingredient_name product_rxcui ndc11   ndc_status name  tty  
-#>    <chr>            <chr>           <chr>         <chr>   <chr>      <chr> <chr>
-#>  1 1551291          dulaglutide     1551300       000021… ACTIVE     0.5 … SBD  
-#>  2 1551291          dulaglutide     1551300       000021… ACTIVE     0.5 … SBD  
-#>  3 1551291          dulaglutide     1551300       000021… ACTIVE     0.5 … SBD  
-#>  4 1551291          dulaglutide     1551300       500903… ACTIVE     0.5 … SBD  
-#>  5 1551291          dulaglutide     1551300       500906… ACTIVE     0.5 … SBD  
-#>  6 1551291          dulaglutide     1551306       000021… ACTIVE     0.5 … SBD  
-#>  7 1551291          dulaglutide     1551306       000021… ACTIVE     0.5 … SBD  
-#>  8 1551291          dulaglutide     1551306       000021… ACTIVE     0.5 … SBD  
-#>  9 1551291          dulaglutide     1551306       500903… ACTIVE     0.5 … SBD  
-#> 10 1551291          dulaglutide     1551306       500906… ACTIVE     0.5 … SBD  
-#> # ℹ 20 more rows
+glp1_ndcs_shortcut <- search_drug(
+  term = glp1_names,
+  return = "ndc",
+  ndc_status = "ACTIVE",
+  concept_status = "active"
+)
+
+glp1_ndcs_shortcut
 ```
 
-## Choosing active versus historical concepts
+    #> # A tibble: 30 × 4
+    #>    ingredient_rxcui product_rxcui ndc11       ndc_status
+    #>    <chr>            <chr>         <chr>       <chr>     
+    #>  1 1551291          1551300       00002143301 ACTIVE    
+    #>  2 1551291          1551300       00002143361 ACTIVE    
+    #>  3 1551291          1551300       00002143380 ACTIVE    
+    #>  4 1551291          1551300       50090348400 ACTIVE    
+    #>  5 1551291          1551300       50090645300 ACTIVE    
+    #>  6 1551291          1551306       00002143401 ACTIVE    
+    #>  7 1551291          1551306       00002143461 ACTIVE    
+    #>  8 1551291          1551306       00002143480 ACTIVE    
+    #>  9 1551291          1551306       50090348300 ACTIVE    
+    #> 10 1551291          1551306       50090645600 ACTIVE    
+    #> # ℹ 20 more rows
 
-For many current medication lists, `concept_status = "active"` is a good
-default. This limits the workflow to active RxNorm concepts.
+The shortcut is useful when the desired medication definition matches
+the standard workflow. The explicit approach is preferable when users
+need to inspect intermediate results, modify the product set, apply
+study-specific exclusions, or document exactly how the final medication
+definition was developed.
 
-Historical concepts may be appropriate when:
+## Adapting the workflow
 
-- the study period includes older calendar years;
-- medication exposure is being reconstructed from historical claims;
-- users need to capture products that may no longer be active in RxNorm;
-- obsolete NDCs are intentionally included.
+The choices above define one particular medication list, i.e., GLP1-RAs.
+Other studies may need a different product universe and different needs.
 
-However, active and historical RxNorm concepts should not be confused
-with NDC status. These are separate choices:
+### Exclude fixed-dose combination products
 
-- `concept_status` controls which RxNorm concepts are considered.
-- `ndc_status` controls which NDC status categories are returned.
-
-For example:
+If the study should include only single-ingredient products, set
+`include_combos = FALSE` during product expansion:
 
 ``` r
 
-search_drug(
-  term = "semaglutide",
-  return = "ndc",
-  concept_status = "active_and_historical",
-  ndc_status = c("ACTIVE", "OBSOLETE", "UNSPECIFIED")
+glp1_products_single <- products_for_ingredients(
+  glp1_ingredients$ingredient_rxcui,
+  ttys = product_ttys("default"),
+  include_combos = FALSE,
+  concept_status = "active"
 )
 ```
 
-## Practical considerations
+Alternatively, you might retain combination products initially, inspect
+them, and apply more specific study-defined exclusions before mapping to
+NDCs.
 
-Medication list construction often requires study-specific decisions.
-Before using the resulting list in an analysis, users should consider:
+### Use a broader set of product-related TTYs
 
-- whether to include fixed-dose combination products;
-- whether to include branded products, clinical products, packs, or all
-  product-related TTYs;
-- whether the study period requires historical RxNorm concepts;
-- whether active NDCs only are sufficient, or obsolete/unspecified NDCs
-  should also be included;
+The default TTY set is intentionally focused on product concepts that
+commonly map to NDCs. A broader product-related set is available when
+the research question requires it:
+
+``` r
+
+glp1_products_extended <- products_for_ingredients(
+  glp1_ingredients$ingredient_rxcui,
+  ttys = product_ttys("extended_product"),
+  include_combos = TRUE,
+  concept_status = "active"
+)
+```
+
+Broader TTY sets can be useful for some RxCUI-based searches, but note
+that not all of the additional concept types will map directly to NDCs.
+
+### Include historical RxNorm concepts and NDC associations
+
+Historical RxNorm concepts and historical NDC associations are related
+but distinct choices.
+
+To include historical RxNorm product concepts, use
+`concept_status = "active_and_historical"`:
+
+``` r
+
+glp1_products_historical <- products_for_ingredients(
+  glp1_ingredients$ingredient_rxcui,
+  ttys = product_ttys("default"),
+  include_combos = TRUE,
+  concept_status = "active_and_historical"
+)
+```
+
+To retrieve historical NDC associations for those products, use the
+`history` argument in
+[`map_rxcui_to_ndc()`](https://www.stevenmsmith.org/rxref/reference/map_rxcui_to_ndc.md):
+
+``` r
+
+glp1_ndcs_historical <- map_rxcui_to_ndc(
+  unique(glp1_products_historical$product_rxcui),
+  history = "all"
+)
+```
+
+The distinction is important:
+
+- `concept_status` determines whether the product search includes
+  historical RxNorm concepts.
+- `history` determines whether RxCUI-to-NDC mapping uses current or
+  historical NDC associations.
+- `status` filters NDCs after those associations have been retrieved.
+
+For example, `history = "all", status = "OBSOLETE"` requests historical
+NDC associations and then retains NDCs currently reported as obsolete.
+
+[`search_drug()`](https://www.stevenmsmith.org/rxref/reference/search_drug.md)
+is convenient for current medication-list construction, but it does not
+currently expose the NDC `history` argument. For studies that require
+historical NDC associations, the explicit
+[`products_for_ingredients()`](https://www.stevenmsmith.org/rxref/reference/products_for_ingredients.md)
+plus
+[`map_rxcui_to_ndc()`](https://www.stevenmsmith.org/rxref/reference/map_rxcui_to_ndc.md)
+workflow provides the necessary control.
+
+## Finalizing the medication definition
+
+Before using a medication list in an analysis, users should consider:
+
+- whether the ingredient list reflects the intended clinical definition;
+- whether fixed-dose combination products should be included;
+- whether the default product TTYs are sufficient;
 - whether route, dose form, or strength restrictions are needed;
-- whether the final list should be reviewed clinically.
+- whether the study period requires historical RxNorm concepts or
+  historical NDC associations; and
+- whether the final product and NDC lists should undergo clinical
+  review.
 
-For strict reproducibility, users should save the final product list,
-NDC list, and package/API versions used to construct the medication
-exposure definition.
+For reproducible research, save the final medication tables used in the
+analysis rather than rebuilding them each time the analysis is run. It
+is also useful to record the `rxref` version and the date on which the
+medication definition was generated.

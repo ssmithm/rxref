@@ -63,8 +63,8 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>rxref: Getting started</h1>
-                        <h4 data-toc-skip class="author">rxref
-authors</h4>
+                        <h4 data-toc-skip class="author">Steven
+Smith</h4>
             
       
       <small class="dont-index">Source: <a href="https://github.com/ssmithm/rxref/blob/main/vignettes/rxref_intro.Rmd" class="external-link"><code>vignettes/rxref_intro.Rmd</code></a></small>
@@ -76,102 +76,92 @@ authors</h4>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p><code>rxref</code> provides tidy, vectorized helpers for working with
-drug identifiers and metadata from the RxNorm and RxClass APIs. It is
-designed for workflows that need to resolve drug names, RxCUIs, and
-NDCs; retrieve RxNorm concept metadata; expand ingredients to product
-concepts; map products to NDCs; and build medication lists for
-pharmacoepidemiologic or health services research.</p>
-<p>Common tasks include:</p>
-<ul>
-<li>resolving messy drug names or NDCs to RxCUIs;</li>
-<li>retrieving RxNorm concept properties;</li>
-<li>mapping NDCs to RxCUIs, or RxCUIs to NDCs;</li>
-<li>finding ingredients and related product concepts;</li>
-<li>creating route-specific product or NDC lists;</li>
-<li>optionally including historical RxNorm concepts when studying older
-calendar periods.</li>
-</ul>
-<p>The examples below are not evaluated when the vignette is built,
-because they query live APIs. You can run them interactively after
-installing rxref.</p>
+<p><code>rxref</code> provides tidy, vectorized tools for working with
+drug identifiers and metadata from the RxNorm and RxClass APIs (part of
+the <a href="https://www.nlm.nih.gov/research/umls/index.html" class="external-link">Unified
+Medical Language System</a> maintained by the U.S. National Library of
+Medicine. It is designed for workflows that need to resolve drug names
+and identifiers, inspect <a href="https://www.nlm.nih.gov/research/umls/rxnorm/overview.html" class="external-link">RxNorm
+concepts</a>, expand ingredients to product concepts, map between RxNorm
+Concept Unique Identifiers (RxCUIs) and National Drug Codes (NDCs),
+retrieve clinical product attributes, and query drug-class
+information.</p>
+<p>A common medication-list workflow looks like this:</p>
+<ol style="list-style-type: decimal">
+<li>resolve a drug name or identifier to an RxCUI;</li>
+<li>identify the ingredient concept or concepts of interest;</li>
+<li>expand ingredients to RxNorm product concepts;</li>
+<li>refine the product set using term type, route, combination-product
+status, or other clinical attributes;</li>
+<li>map the final product concepts to NDCs when needed; and</li>
+<li>save the resulting medication definition for reproducible downstream
+use.</li>
+</ol>
+<p>The examples below query live RxNorm or RxClass APIs and therefore
+are not evaluated when this vignette is built. You can run them
+interactively after installing <code>rxref</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p>Install the stable version of <code>rxref</code> from CRAN:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install from CRAN</span></span>
-<span><span class="co"># install.packages("rxref")</span></span></code></pre></div>
-<p>Or the development version:</p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"rxref"</span><span class="op">)</span></span></code></pre></div>
+<p>Or install the development version from GitHub:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="co"># pak::pak("ssmithm/rxref")</span></span></code></pre></div>
-<p>Then load the package (the vignette will also use dplyr).</p>
+<p>Then load <code>rxref</code>. The examples below also use
+<code>dplyr</code> for data manipulation.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://www.stevenmsmith.org/rxref/">rxref</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="resolve-messy-inputs-to-rxcuis">Resolve messy inputs to RxCUIs<a class="anchor" aria-label="anchor" href="#resolve-messy-inputs-to-rxcuis"></a>
+<h2 id="resolve-drug-names-and-identifiers">Resolve drug names and identifiers<a class="anchor" aria-label="anchor" href="#resolve-drug-names-and-identifiers"></a>
 </h2>
-<p>The <code><a href="../reference/resolve.html">resolve()</a></code> function accepts common drug identifiers,
-including free-text drug names, NDCs, and RxCUIs. This is often the
-first step when working with real-world medication data.</p>
+<p><code><a href="../reference/resolve.html">resolve()</a></code> accepts free-text drug names, NDCs, and
+RxCUIs. With the default <code>type = "auto"</code>, <code>rxref</code>
+infers the input type and returns the corresponding RxNorm concept
+information.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/resolve.html">resolve</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"metformin 500 mg tablet"</span>,</span>
 <span>  <span class="st">"00093-1048-01"</span>,</span>
-<span>  <span class="st">"8610"</span></span>
+<span>  <span class="st">"860975"</span></span>
 <span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>The returned object includes the original input, the resolved RxCUI,
-and available concept information.</p>
+<p>This is useful when medication data arrive in mixed or imperfect
+formats and you first need to determine which RxNorm concepts they
+represent.</p>
 </div>
 <div class="section level2">
-<h2 id="retrieve-properties-for-rxcuis">Retrieve properties for RxCUIs<a class="anchor" aria-label="anchor" href="#retrieve-properties-for-rxcuis"></a>
+<h2 id="inspect-rxnorm-concepts">Inspect RxNorm concepts<a class="anchor" aria-label="anchor" href="#inspect-rxnorm-concepts"></a>
 </h2>
 <p>Once you have one or more RxCUIs, use <code><a href="../reference/get_properties.html">get_properties()</a></code>
-to retrieve RxNorm concept metadata. This is useful when you want to
-inspect concept names, term types, suppress status, or other basic
-RxNorm properties.</p>
+to retrieve core RxNorm metadata such as the preferred concept name,
+term type (TTY), suppress flag, and UMLS Concept Unique Identifier
+(CUI).</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"860975"</span>, <span class="st">"860976"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_properties.html">get_properties</a></span><span class="op">(</span><span class="va">ids</span><span class="op">)</span></span></code></pre></div>
+<p>Understanding the TTY is often important because RxNorm distinguishes
+ingredients, clinical drugs, branded drugs, packs, and several other
+concept types. Only some of these are prescribable products, as
+discussed below.</p>
 </div>
 <div class="section level2">
-<h2 id="map-ndcs-and-rxcuis">Map NDCs and RxCUIs<a class="anchor" aria-label="anchor" href="#map-ndcs-and-rxcuis"></a>
+<h2 id="identify-ingredient-concepts">Identify ingredient concepts<a class="anchor" aria-label="anchor" href="#identify-ingredient-concepts"></a>
 </h2>
-<p><code>rxref</code> includes helpers for mapping between NDCs and
-RxCUIs.</p>
-<p>To map NDCs to RxCUIs:</p>
+<p>For medication-list construction, the next step is often to identify
+the ingredient-level RxCUIs corresponding to one or more drug names.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/map_ndc_to_rxcui.html">map_ndc_to_rxcui</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  <span class="st">"00093-1048-01"</span>,</span>
-<span>  <span class="st">"00093-1048-10"</span></span>
-<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>To map an RxCUI to NDCs:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc</a></span><span class="op">(</span><span class="st">"860975"</span><span class="op">)</span></span></code></pre></div>
-<p>You can optionally filter NDC mappings by NDC status:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc</a></span><span class="op">(</span><span class="st">"860975"</span>, status <span class="op">=</span> <span class="st">"ACTIVE"</span><span class="op">)</span></span></code></pre></div>
-<p>NDC status and RxNorm concept status are related but distinct. NDC
-status refers to whether an NDC is active, obsolete, or otherwise
-categorized by RxNav. RxNorm concept status refers to whether the RxNorm
-concept itself is active or historical.</p>
-</div>
-<div class="section level2">
-<h2 id="find-ingredients">Find ingredients<a class="anchor" aria-label="anchor" href="#find-ingredients"></a>
-</h2>
-<p>The <code><a href="../reference/find_ingredients.html">find_ingredients()</a></code> function helps identify
-ingredient-level RxCUIs from approximate drug names.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/find_ingredients.html">find_ingredients</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metformin"</span>, <span class="st">"semaglutide"</span>, <span class="st">"lisinopril"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>For many medication list workflows, users first identify a set of
-ingredient RxCUIs and then expand those ingredients to product
-concepts.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/find_ingredients.html">find_ingredients()</a></code> returns ingredient (<code>IN</code>)
+and, when available, precise ingredient (<code>PIN</code>) concepts. A
+common pattern is to retain the base ingredient concepts before
+expanding them to products.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ingredients</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_ingredients.html">find_ingredients</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metformin"</span>, <span class="st">"semaglutide"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tty</span> <span class="op">==</span> <span class="st">"IN"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span></span>
@@ -184,188 +174,263 @@ concepts.</p>
 <div class="section level2">
 <h2 id="expand-ingredients-to-product-concepts">Expand ingredients to product concepts<a class="anchor" aria-label="anchor" href="#expand-ingredients-to-product-concepts"></a>
 </h2>
-<p>Use <code><a href="../reference/products_for_ingredients.html">products_for_ingredients()</a></code> to identify product
-concepts associated with one or more ingredient RxCUIs.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p>Use <code><a href="../reference/products_for_ingredients.html">products_for_ingredients()</a></code> to identify RxNorm
+product concepts that contain the selected ingredients.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">products</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
-<span>  <span class="va">ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
-<span>  concept_status <span class="op">=</span> <span class="st">"active"</span></span>
+<span>  <span class="va">ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">products</span></span></code></pre></div>
-<p>By default, most workflows should focus on active RxNorm concepts.
-For studies that span older calendar periods, you may want to include
-<em>historical</em> concepts as well.</p>
+<p>By default, <code>rxref</code> uses a product-focused set of TTYs
+corresponding to semantic clinical drugs, semantic branded drugs,
+generic packs, and branded packs. These are the concept types most
+likely to be useful when the ultimate goal is NDC mapping.</p>
+<p>You can inspect the available predefined TTY sets with:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"default"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"extended_product"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"extended"</span><span class="op">)</span></span></code></pre></div>
+<p>For more detail about individual RxNorm term types, use:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tty_catalogue.html">tty_catalogue</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>A broader TTY set can be supplied explicitly when the study question
+requires additional product-related concepts:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">products_extended</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
+<span>  <span class="va">ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
+<span>  ttys <span class="op">=</span> <span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"extended_product"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">products_extended</span></span></code></pre></div>
+<p>The narrowest useful product definition is often preferable. Broader
+TTY sets can capture additional structural or grouping concepts, but
+many of these do not map directly to NDCs.</p>
+</div>
+<div class="section level2">
+<h2 id="refine-products-using-clinical-attributes">Refine products using clinical attributes<a class="anchor" aria-label="anchor" href="#refine-products-using-clinical-attributes"></a>
+</h2>
+<p><code><a href="../reference/get_clinical_attributes.html">get_clinical_attributes()</a></code> adds clinically useful
+information such as strength, dose form, route, dose-form group,
+brand/generic status, and ingredient count.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">attrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_clinical_attributes.html">get_clinical_attributes</a></span><span class="op">(</span><span class="va">products</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">attrs</span></span></code></pre></div>
+<p>For example, you can inspect the routes and dose-form groups
+represented in a product set:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">attrs</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">route</span>, <span class="va">dose_form_group</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>Or identify combination products:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">attrs</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">ingredient_count</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<p>Clinical attributes are derived from RxNorm concept information,
+including some parsing of RxNorm names and dose-form metadata. They are
+useful for medication-list construction, but study-specific product
+definitions should still be reviewed before final use.</p>
+<div class="section level3">
+<h3 id="filter-products-by-route">Filter products by route<a class="anchor" aria-label="anchor" href="#filter-products-by-route"></a>
+</h3>
+<p>When only one route is relevant,
+<code><a href="../reference/filter_products_by_route.html">filter_products_by_route()</a></code> provides a convenient way to
+retain products matching that route.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">oral_products</span> <span class="op">&lt;-</span> <span class="va">products</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/filter_products_by_route.html">filter_products_by_route</a></span><span class="op">(</span>route <span class="op">=</span> <span class="st">"ORAL"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">oral_products</span></span></code></pre></div>
+<p>Route filtering can also be requested directly during product
+expansion:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">oral_products</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
+<span>  <span class="va">ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
+<span>  route <span class="op">=</span> <span class="st">"ORAL"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For more involved medication definitions, it is often useful to
+inspect the unfiltered product set first and then apply route
+restrictions explicitly.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="map-between-rxcuis-and-ndcs">Map between RxCUIs and NDCs<a class="anchor" aria-label="anchor" href="#map-between-rxcuis-and-ndcs"></a>
+</h2>
+<p><code>rxref</code> provides helpers for mapping in both directions
+between NDCs and RxCUIs.</p>
+<p>To map NDCs to RxCUIs:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/map_ndc_to_rxcui.html">map_ndc_to_rxcui</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"00093-1048-01"</span>,</span>
+<span>  <span class="st">"00093-1048-10"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>To map product RxCUIs to currently active NDC associations:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ndcs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc</a></span><span class="op">(</span></span>
+<span>  <span class="va">oral_products</span><span class="op">$</span><span class="va">product_rxcui</span>,</span>
+<span>  status <span class="op">=</span> <span class="st">"ACTIVE"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">ndcs</span></span></code></pre></div>
+<p>Because multiple NDCs may correspond to the same RxNorm product
+concept, NDC mapping commonly increases the number of rows
+substantially.</p>
+</div>
+<div class="section level2">
+<h2 id="use-search_drug-for-a-compact-workflow">Use <code>search_drug()</code> for a compact workflow<a class="anchor" aria-label="anchor" href="#use-search_drug-for-a-compact-workflow"></a>
+</h2>
+<p>The preceding sections show the individual steps so that users can
+inspect and control each stage of medication-list construction. For many
+common workflows, <code><a href="../reference/search_drug.html">search_drug()</a></code> combines ingredient search,
+product expansion, route filtering, and optional NDC mapping in one
+call.</p>
+<p>To return oral metformin product concepts:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
+<span>  term <span class="op">=</span> <span class="st">"metformin"</span>,</span>
+<span>  return <span class="op">=</span> <span class="st">"rxcui"</span>,</span>
+<span>  route <span class="op">=</span> <span class="st">"ORAL"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>To return currently active NDCs:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
+<span>  term <span class="op">=</span> <span class="st">"metformin"</span>,</span>
+<span>  return <span class="op">=</span> <span class="st">"ndc"</span>,</span>
+<span>  route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
+<span>  ndc_status <span class="op">=</span> <span class="st">"ACTIVE"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Or return both product concepts and NDCs:</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">metformin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
+<span>  term <span class="op">=</span> <span class="st">"metformin"</span>,</span>
+<span>  return <span class="op">=</span> <span class="st">"both"</span>,</span>
+<span>  route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
+<span>  ndc_status <span class="op">=</span> <span class="st">"ACTIVE"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">metformin</span><span class="op">$</span><span class="va">products</span></span>
+<span><span class="va">metformin</span><span class="op">$</span><span class="va">ndcs</span></span></code></pre></div>
+<p><code><a href="../reference/search_drug.html">search_drug()</a></code> is useful for concise workflows, while the
+step-by-step approach is preferable when you need to audit intermediate
+concepts or apply custom study-specific rules.</p>
+</div>
+<div class="section level2">
+<h2 id="work-with-historical-concepts-and-ndc-associations">Work with historical concepts and NDC associations<a class="anchor" aria-label="anchor" href="#work-with-historical-concepts-and-ndc-associations"></a>
+</h2>
+<p>Historical medication-list construction involves two related but
+distinct questions:</p>
+<ul>
+<li>
+<strong>RxNorm concept history:</strong> should the product search
+include concepts that are no longer active in the current RxNorm
+release?</li>
+<li>
+<strong>NDC association history:</strong> should NDC mapping include
+historical direct or indirect NDC associations rather than only
+currently active associations?</li>
+</ul>
+<p>To include active and historical RxNorm product concepts, use
+<code>concept_status = "active_and_historical"</code>:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">products_historical</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
 <span>  <span class="va">ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
 <span>  concept_status <span class="op">=</span> <span class="st">"active_and_historical"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">products_historical</span></span></code></pre></div>
-<p>Historical concepts can be useful when reconstructing medication
-exposure during older study periods. However, some historical concepts
-may have less complete clinical attribute information than active
-concepts, so users should review route, dose form, and ingredient
-information carefully when using historical concepts.</p>
-</div>
-<div class="section level2">
-<h2 id="choose-product-term-types">Choose product term types<a class="anchor" aria-label="anchor" href="#choose-product-term-types"></a>
-</h2>
-<p>RxNorm includes several term types, or TTYs, for clinical drugs,
-branded drugs, packs, and other related concepts. <code>rxref</code>
-provides helpers for common product-focused TTY sets.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"default"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"extended_product"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"extended"</span><span class="op">)</span></span></code></pre></div>
-<p>For example, you can request an expanded set of product concepts:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">products_extended</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/products_for_ingredients.html">products_for_ingredients</a></span><span class="op">(</span></span>
-<span>  <span class="va">ingredients</span><span class="op">$</span><span class="va">ingredient_rxcui</span>,</span>
-<span>  ttys <span class="op">=</span> <span class="fu"><a href="../reference/product_ttys.html">product_ttys</a></span><span class="op">(</span><span class="st">"extended_product"</span><span class="op">)</span>,</span>
-<span>  concept_status <span class="op">=</span> <span class="st">"active"</span></span>
+<p>To retrieve historical NDC associations for selected product RxCUIs,
+use the <code>history</code> argument to
+<code><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc()</a></code>:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ndcs_historical</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc</a></span><span class="op">(</span></span>
+<span>  <span class="va">products_historical</span><span class="op">$</span><span class="va">product_rxcui</span>,</span>
+<span>  history <span class="op">=</span> <span class="st">"all"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">products_extended</span></span></code></pre></div>
-<p>The appropriate TTY set depends on the study question. A narrower
-product set may be preferable for simple ingredient-to-product
-workflows, while an extended set may be useful when users want to
-capture additional product or pack concepts. More information on TTYs
-can be found by running <code><a href="../reference/tty_catalogue.html">tty_catalogue()</a></code>.</p>
+<span><span class="va">ndcs_historical</span></span></code></pre></div>
+<p>Use <code>history = "direct"</code> when only NDCs ever directly
+associated with the input RxCUI are desired, and
+<code>history = "all"</code> when indirect associations through remapped
+or archived concepts should also be considered. The <code>status</code>
+argument can then be used to filter the NDCs that were retrieved.</p>
+<p>Historical concepts and NDCs can be important when reconstructing
+exposure in older study periods. They also require additional review
+because historical concepts may have less complete route, dose-form, or
+other clinical metadata than current concepts.</p>
 </div>
 <div class="section level2">
-<h2 id="search-for-drugs-in-one-step">Search for drugs in one step<a class="anchor" aria-label="anchor" href="#search-for-drugs-in-one-step"></a>
+<h2 id="query-drug-classes-with-rxclass">Query drug classes with RxClass<a class="anchor" aria-label="anchor" href="#query-drug-classes-with-rxclass"></a>
 </h2>
-<p>For many common workflows, <code><a href="../reference/search_drug.html">search_drug()</a></code> provides a
-compact interface that combines ingredient search, product expansion,
-route filtering, and optional NDC mapping.</p>
-<p>For example, to search for oral metformin products:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
-<span>  term <span class="op">=</span> <span class="st">"metformin"</span>,</span>
-<span>  return <span class="op">=</span> <span class="st">"product"</span>,</span>
-<span>  route <span class="op">=</span> <span class="st">"ORAL"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>To return NDCs instead of product concepts:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
-<span>  term <span class="op">=</span> <span class="st">"metformin"</span>,</span>
-<span>  return <span class="op">=</span> <span class="st">"ndc"</span>,</span>
-<span>  route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
-<span>  ndc_status <span class="op">=</span> <span class="st">"ACTIVE"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>To return both product concepts and NDCs:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
-<span>  term <span class="op">=</span> <span class="st">"metformin"</span>,</span>
-<span>  return <span class="op">=</span> <span class="st">"both"</span>,</span>
-<span>  route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
-<span>  ndc_status <span class="op">=</span> <span class="st">"ACTIVE"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>For historical studies, you can include historical RxNorm concepts
-and broader NDC status categories:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/search_drug.html">search_drug</a></span><span class="op">(</span></span>
-<span>  term <span class="op">=</span> <span class="st">"metformin"</span>,</span>
-<span>  return <span class="op">=</span> <span class="st">"ndc"</span>,</span>
-<span>  route <span class="op">=</span> <span class="st">"ORAL"</span>,</span>
-<span>  concept_status <span class="op">=</span> <span class="st">"active_and_historical"</span>,</span>
-<span>  ndc_status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ACTIVE"</span>, <span class="st">"OBSOLETE"</span>, <span class="st">"UNSPECIFIED"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Here, <code>concept_status</code> controls whether active or
-historical RxNorm concepts are considered. The <code>ndc_status</code>
-argument controls which NDC status categories are returned.</p>
-</div>
-<div class="section level2">
-<h2 id="retrieve-clinical-attributes">Retrieve clinical attributes<a class="anchor" aria-label="anchor" href="#retrieve-clinical-attributes"></a>
-</h2>
-<p>Some workflows require route, dose form, strength, or
-ingredient-count information. The <code><a href="../reference/get_clinical_attributes.html">get_clinical_attributes()</a></code>
-function retrieves product-level clinical attributes for RxCUIs.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">attrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_clinical_attributes.html">get_clinical_attributes</a></span><span class="op">(</span><span class="va">products</span><span class="op">$</span><span class="va">product_rxcui</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">attrs</span></span></code></pre></div>
-<p>These attributes can be useful for route-specific medication
-lists:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">attrs</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">routes</span>, <span class="va">dose_form_groups</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>Combination products may include more than one ingredient. Depending
-on the workflow, users may want to exclude fixed-dose combinations,
-retain them, or inspect them separately.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">attrs</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n_ingredients</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="build-route-specific-lists">Build route-specific lists<a class="anchor" aria-label="anchor" href="#build-route-specific-lists"></a>
-</h2>
-<p>The <code><a href="../reference/filter_products_by_route.html">filter_products_by_route()</a></code> helper can be used after
-product expansion to retain products matching a specified route.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">oral_products</span> <span class="op">&lt;-</span> <span class="va">products</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/filter_products_by_route.html">filter_products_by_route</a></span><span class="op">(</span>route <span class="op">=</span> <span class="st">"ORAL"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">oral_products</span></span></code></pre></div>
-<p>Route filtering relies on available clinical attribute information.
-If a product concept lacks route or dose-form information, it may not be
-retained by route-specific filters. This is especially important when
-working with historical RxNorm concepts.</p>
-</div>
-<div class="section level2">
-<h2 id="caching-and-api-use">Caching and API use<a class="anchor" aria-label="anchor" href="#caching-and-api-use"></a>
-</h2>
-<p><code>rxref</code> is designed to support vectorized workflows, but
-large medication lists can require many API calls. Repeated requests can
-be reduced by enabling caching through <code><a href="../reference/rxref_conf.html">rxref_conf()</a></code>.</p>
-<p>For example, to use an in-memory cache during a session:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/rxref_conf.html">rxref_conf</a></span><span class="op">(</span>cache <span class="op">=</span> <span class="fu">cachem</span><span class="fu">::</span><span class="fu"><a href="https://cachem.r-lib.org/reference/cache_mem.html" class="external-link">cache_mem</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>You can also adjust the delay between API requests:</p>
+<p><code>rxref</code> also provides access to drug-class relationships
+from the RxClass API. Because different sources classify drugs
+differently, class source and relationship information are retained
+rather than collapsed into a single universal class definition.</p>
+<p>Source-specific convenience functions include <code><a href="../reference/get_atc.html">get_atc()</a></code>,
+<code><a href="../reference/get_epc.html">get_epc()</a></code>, and <code><a href="../reference/get_va.html">get_va()</a></code>.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/get_atc.html">get_atc</a></span><span class="op">(</span><span class="st">"metformin"</span>, by <span class="op">=</span> <span class="st">"name"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/get_epc.html">get_epc</a></span><span class="op">(</span><span class="st">"metformin"</span>, by <span class="op">=</span> <span class="st">"name"</span><span class="op">)</span></span></code></pre></div>
+<p>For a broader class-oriented summary, <code><a href="../reference/get_drug_classes.html">get_drug_classes()</a></code>
+combines selected class-like assertions from multiple sources:</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/get_drug_classes.html">get_drug_classes</a></span><span class="op">(</span><span class="st">"metformin"</span>, by <span class="op">=</span> <span class="st">"name"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/get_drug_classes.html">get_drug_classes()</a></code> is experimental because “drug class”
+is not a single native RxClass concept and different source vocabularies
+use different classification logic. For source-specific or
+relationship-specific work, use <code><a href="../reference/get_classes.html">get_classes()</a></code> and the
+dedicated RxClass helpers.</p>
+</div>
+<div class="section level2">
+<h2 id="configure-api-behavior">Configure API behavior<a class="anchor" aria-label="anchor" href="#configure-api-behavior"></a>
+</h2>
+<p><code>rxref</code> uses an in-memory cache by default so repeated
+identical requests within a session do not need to be sent to the API
+again. Current package settings can be inspected with:</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rxref_conf.html">rxref_conf</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>You can also adjust the delay between API requests:</p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rxref_conf.html">rxref_conf</a></span><span class="op">(</span>rate_delay <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span></code></pre></div>
-<p>This can be helpful for large batch workflows or when working
-interactively with many RxCUIs. But, be kind to the API. RxNorm
-specifies a <a href="https://lhncbc.nlm.nih.gov/RxNav/TermsofService.html" class="external-link">maximum
-request rate of 20 per second per IP</a>.</p>
+<p>For large batch workflows, caching and an appropriate request delay
+help reduce unnecessary API traffic. RxNav currently specifies a maximum
+request rate of 20 requests per second per IP address; see the <a href="https://lhncbc.nlm.nih.gov/RxNav/TermsofService.html" class="external-link">RxNav Terms
+of Service</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>
 </h2>
-<p>The public RxNorm and RxClass APIs reflect current source data and
-may change over time as RxNorm releases are updated. For strict
-reproducibility, especially in studies tied to a specific calendar
-period, users should save the medication lists, product concepts, NDC
-mappings, and API outputs used in the final analytic workflow.</p>
-<p>At some point, a future version of <code>rxref</code> may support
-local or release-specific backends for users who need to bind analyses
-to specific RxNorm releases.</p>
+<p>The public RxNorm and RxClass APIs reflect source data that change as
+new releases are published. For analyses that require a reproducible
+medication definition, save the final ingredient list, product concepts,
+NDC mappings, and other API-derived metadata used in the analytic
+workflow.</p>
+<p>This is especially important for studies tied to historical calendar
+periods, because the concepts and mappings returned by the current APIs
+may differ from those available when the original data were
+generated.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p><code>rxref</code> supports common medication-identification
-workflows, including:</p>
+<p>A typical <code>rxref</code> workflow is:</p>
 <ol style="list-style-type: decimal">
-<li>resolving names, NDCs, or RxCUIs with <code><a href="../reference/resolve.html">resolve()</a></code>;</li>
-<li>retrieving concept metadata with <code><a href="../reference/get_properties.html">get_properties()</a></code>;</li>
-<li>mapping between NDCs and RxCUIs with <code><a href="../reference/map_ndc_to_rxcui.html">map_ndc_to_rxcui()</a></code>
-and <code><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc()</a></code>;</li>
-<li>identifying ingredients with <code><a href="../reference/find_ingredients.html">find_ingredients()</a></code>;</li>
-<li>expanding ingredients to products with
+<li>resolve names or identifiers with <code><a href="../reference/resolve.html">resolve()</a></code>;</li>
+<li>inspect concepts with <code><a href="../reference/get_properties.html">get_properties()</a></code>;</li>
+<li>identify ingredients with <code><a href="../reference/find_ingredients.html">find_ingredients()</a></code>;</li>
+<li>expand ingredients to products with
 <code><a href="../reference/products_for_ingredients.html">products_for_ingredients()</a></code>;</li>
-<li>retrieving route and dose-form information with
-<code><a href="../reference/get_clinical_attributes.html">get_clinical_attributes()</a></code>;</li>
-<li>building route-specific product lists with
+<li>refine products using <code><a href="../reference/get_clinical_attributes.html">get_clinical_attributes()</a></code> and
 <code><a href="../reference/filter_products_by_route.html">filter_products_by_route()</a></code>;</li>
-<li>using <code><a href="../reference/search_drug.html">search_drug()</a></code> for compact end-to-end
-workflows.</li>
+<li>map between RxCUIs and NDCs with <code><a href="../reference/map_ndc_to_rxcui.html">map_ndc_to_rxcui()</a></code> and
+<code><a href="../reference/map_rxcui_to_ndc.html">map_rxcui_to_ndc()</a></code>;</li>
+<li>use <code><a href="../reference/search_drug.html">search_drug()</a></code> when a compact end-to-end workflow is
+sufficient; and</li>
+<li>query drug-class information with the RxClass helpers when
+needed.</li>
 </ol>
-<p>These functions are intended to support transparent, reproducible
-medication list construction while keeping outputs tidy and compatible
-with common dplyr workflows.</p>
+<p>These tools are intended to support transparent, auditable, and
+reproducible medication-list construction while keeping outputs tidy and
+compatible with common <code>tidyverse</code> workflows.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -378,7 +443,7 @@ with common dplyr workflows.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>
