@@ -1,29 +1,14 @@
 ---
-title: "Building route-specific RxCUI and NDC lists"
+title: "Case Study: Building route-specific RxCUI and NDC lists"
 author: "Steven Smith"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Building route-specific RxCUI and NDC lists}
+  %\VignetteIndexEntry{Case Study: Building route-specific RxCUI and NDC lists}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include = FALSE}
-# Vignettes use precomputed example data by default.
-# To rebuild examples with live RxNorm/RxClass API calls, set:
-# Sys.setenv(RXREF_BUILD_VIGNETTES_ONLINE = "true")
-
-online_env <- identical(
-  tolower(Sys.getenv("RXREF_BUILD_VIGNETTES_ONLINE")),
-  "true"
-)
-
-has_net <- tryCatch({
-  requireNamespace("curl", quietly = TRUE) && curl::has_internet()
-}, error = function(e) FALSE)
-
-run_live <- online_env && has_net
-
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -34,61 +19,54 @@ library(dplyr)
 
 read_rxref_example <- function(file) {
   path <- system.file("extdata", file, package = "rxref")
+
   if (!nzchar(path)) {
     stop(
       "The example data file '", file, "' was not found. ",
-      "Reinstall rxref or rebuild the vignette with ",
-      "RXREF_BUILD_VIGNETTES_ONLINE=true."
+      "You may need to reinstall rxref to restore the bundled vignette data."
     )
   }
+
   readRDS(path)
 }
 ```
 
-## Overview
+## Case
 
-A common use case for `rxref` is to develop a list of RxNorm product
-concepts and National Drug Codes (NDCs) for a drug class.
+A common use case for `rxref` is to develop a list of RxNorm product concepts 
+(RxCUIs) and National Drug Codes (NDCs) for a medication class. However, 
+sometimes the ingredient alone is not sufficient to define the exposure.
 
-For example, suppose we want to identify product RxCUIs and active NDCs
-for oral beta-blockers. This is not as simple as searching for
-beta-blocker ingredients and mapping every product to NDCs, because some
-beta-blockers are available through multiple routes.
+Suppose we want to identify **oral beta-blocker products** for an
+outpatient pharmacoepidemiologic study. Several beta-blockers are
+available via multiple routes of administration. For example:
 
-For example:
+- metoprolol, atenolol, labetalol, propranolol, and sotalol have oral and
+  injectable products;
+- esmolol is primarily used as an injectable product; and
+- timolol, betaxolol, and related drugs may have ophthalmic products.
 
-- `metoprolol`, `atenolol`, `labetalol`, `propranolol`, and `sotalol`
-  may have oral and injectable products;
-- `esmolol` is injectable only;
-- `timolol`, `betaxolol`, and related drugs may have ophthalmic products.
+If we simply expand beta-blocker ingredients to all products and map them
+to NDCs, we would capture products outside the intended exposure
+definition.
 
-For many pharmacoepidemiologic studies, we may want oral outpatient-use
-products only.
+This case study builds an oral beta-blocker medication list in five
+steps:
 
-This vignette walks through a tidy workflow for:
+1. define the ingredients of interest;
+2. resolve ingredient names to RxNorm ingredient RxCUIs;
+3. expand the ingredients to product-level RxNorm concepts;
+4. inspect and filter products by route; and
+5. map the final oral products to active NDCs.
 
-1. resolving drug names to ingredient RxCUIs;
-2. expanding ingredient RxCUIs to product RxCUIs;
-3. filtering product RxCUIs by route; and
-4. mapping the filtered product RxCUIs to active NDCs.
+The displayed results use precomputed data bundled with `rxref`, so
+the vignette can be built without requiring access to the live RxNorm API.
+The code shown below is the code users can run interactively to generate
+the results from the current API.
 
-The examples use precomputed data by default so the vignette can be built
-without querying the live RxNorm API. To rebuild the examples with live
-API calls, set:
+## Define the ingredient list
 
-```{r eval = FALSE}
-Sys.setenv(RXREF_BUILD_VIGNETTES_ONLINE = "true")
-```
-
-## Define a beta-blocker ingredient list
-
-In this example, we start with a curated list of beta-blocker ingredient
-names.
-
-Users can also use RxClass-related helpers, such as `find_classes()` or
-`get_class_members()`, when a suitable source vocabulary is available.
-However, curated ingredient lists remain useful because class membership
-may not perfectly match a study-specific exposure definition.
+We begin with a curated list of beta-blocker ingredients.
 
 ```{r define}
 beta_blocker_names <- c(
@@ -107,194 +85,210 @@ beta_blocker_names <- c(
   "sotalol",
   "timolol"
 )
+
+beta_blocker_names
 ```
 
-## Resolve drug names to ingredient RxCUIs
+A curated ingredient list is often appropriate when the study definition
+is known in advance. `rxref` also provides RxClass helpers such as
+`find_classes()` and `get_class_members()` when users want to begin from
+a source vocabulary class rather than a prespecified list.
 
-First, use `find_ingredients()` to resolve each drug name to an RxNorm
-ingredient concept.
+## Step 1: Identify ingredient RxCUIs
 
-```{r resolve}
-if (run_live) {
-  bb_ingredients <- find_ingredients(beta_blocker_names) |>
-    filter(tty == "IN") |>
-    distinct(
-      input,
-      ingredient_rxcui = rxcui,
-      ingredient_name = name,
-      ingredient_tty = tty
-    )
-} else {
-  bb_ingredients <- read_rxref_example("bb_ingredients.rds")
-}
+Use `find_ingredients()` to resolve each name to an RxNorm ingredient
+concept. Here we retain TTY = `"IN"`, representing the base ingredient
+concept.
+
+```{r resolve, eval = FALSE}
+bb_ingredients <- find_ingredients(beta_blocker_names) |>
+  filter(tty == "IN") |>
+  distinct(
+    input,
+    ingredient_rxcui = rxcui,
+    ingredient_name = name,
+    ingredient_tty = tty
+  )
 
 bb_ingredients
 ```
 
-The resulting table contains one row per resolved ingredient. These
-ingredient RxCUIs are the starting point for product expansion.
+```{r resolve-data, include = FALSE}
+bb_ingredients <- read_rxref_example("bb_ingredients.rds")
+```
 
-## Expand ingredients to product RxCUIs
+```{r resolve-output, echo = FALSE}
+bb_ingredients
+```
+
+This is a useful checkpoint: before expanding to hundreds of product
+concepts, verify that each study-defined name resolved to the intended
+ingredient.
+
+## Step 2: Expand ingredients to product RxCUIs
 
 Next, use `products_for_ingredients()` to identify product-level RxNorm
-concepts containing each ingredient.
+concepts containing the selected ingredients.
 
-In this example, we use active RxNorm concepts and include combination
-products.
+For this example, we use the default product-focused TTYs, retain
+fixed-dose combination products, and initially keep products from all
+routes.
 
-```{r expand}
-if (run_live) {
-  bb_products <- products_for_ingredients(
-    bb_ingredients$ingredient_rxcui,
-    ttys = product_ttys("default"),
-    include_combos = TRUE,
-    concept_status = "active"
-  ) |>
-    left_join(bb_ingredients, by = "ingredient_rxcui")
-} else {
-  bb_products <- read_rxref_example("bb_products.rds")
-}
+```{r expand, eval = FALSE}
+bb_products <- products_for_ingredients(
+  bb_ingredients$ingredient_rxcui,
+  ttys = product_ttys("default"),
+  include_combos = TRUE,
+  concept_status = "active"
+) |>
+  # rejoin the ingredients list so you know what maps to what
+  left_join(bb_ingredients, by = "ingredient_rxcui")
 
 bb_products
 ```
 
-Because `include_combos = TRUE`, combination products are retained. For
-beta-blockers, this means products such as beta-blocker/thiazide
-combinations may be included.
-
-To exclude combination products, set `include_combos = FALSE`.
-
-```{r exclude-option}
-if (run_live) {
-  bb_single_ingredient_products <- products_for_ingredients(
-    bb_ingredients$ingredient_rxcui,
-    ttys = product_ttys("default"),
-    include_combos = FALSE,
-    concept_status = "active"
-  ) |>
-    left_join(bb_ingredients, by = "ingredient_rxcui")
-} else {
-  bb_single_ingredient_products <- read_rxref_example(
-    "bb_single_ingredient_products.rds"
-  )
-}
-
-bb_single_ingredient_products
+```{r expand-data, include = FALSE}
+bb_products <- read_rxref_example("bb_products.rds")
 ```
 
-## Active versus historical RxNorm concepts
-
-For many current medication list workflows, `concept_status = "active"`
-is a good default. This limits product expansion to active RxNorm
-concepts.
-
-For studies covering older calendar periods, users may want to include
-historical RxNorm concepts as well.
-
-```{r historical-products, eval = FALSE}
-bb_products_historical <- products_for_ingredients(
-  bb_ingredients$ingredient_rxcui,
-  ttys = product_ttys("default"),
-  include_combos = TRUE,
-  concept_status = "active_and_historical"
-)
+```{r expand-output, echo = FALSE}
+bb_products |>
+  arrange(ingredient_name, tty, name) |>
+  head(30)
 ```
 
-Historical concepts can be useful when reconstructing medication exposure
-during older study periods. However, historical product concepts may have
-less complete clinical attribute information than active concepts. Route
-filtering should therefore be reviewed carefully when
-`concept_status = "active_and_historical"` is used.
+At this stage, the product table intentionally contains products from all
+routes. Keeping route filtering separate for the moment makes it easier
+to inspect what would otherwise be included in the medication
+definition.
 
-## Why route filtering matters
+Because `include_combos = TRUE`, fixed-dose combination products may
+also be present. We'll return to that later.
 
-At this point, the product list may include products from multiple
-routes. For example, some beta-blockers have oral tablets, injectable
-products, or ophthalmic solutions.
+## Step 3: Inspect route and dose-form information
 
-We can use `get_clinical_attributes()` to inspect route and dose-form
-information for the product RxCUIs.
+`get_clinical_attributes()` derives clinically useful information from
+the product concepts, including route, dose form, dose-form group,
+ingredient count, and brand/generic indicators.
 
-```{r filtering-matters}
-if (run_live) {
-  bb_attrs <- get_clinical_attributes(
-    unique(bb_products$product_rxcui)
-  ) |>
-    rename(product_rxcui = rxcui)
-} else {
-  bb_attrs <- read_rxref_example("bb_attrs.rds")
-}
+```{r inspect-routes, eval = FALSE}
+bb_attributes <- get_clinical_attributes(
+  unique(bb_products$product_rxcui)
+) |>
+  rename(product_rxcui = rxcui)
 
-bb_attrs |>
+bb_attributes
+```
+
+```{r inspect-routes-data, include = FALSE}
+bb_attributes <- read_rxref_example("bb_attrs.rds")
+```
+
+A quick summary shows why route filtering is needed:
+
+```{r inspect-routes-output}
+bb_attributes |>
   count(route, dose_form_group, sort = TRUE)
 ```
 
-This helps verify whether the product list includes routes that are
-outside the intended use case.
+The exact mix of routes depends on the current RxNorm concepts returned
+for the selected ingredients, but the important point is that an
+ingredient-based search can identify products that do not correspond to
+the intended route of exposure.
 
-## Filter to oral products
+It can also be useful to inspect individual products associated with
+non-oral routes:
 
-To keep only orally available products, use `filter_products_by_route()`.
+```{r inspect-nonoral}
+bb_products |>
+  left_join(
+    bb_attributes |>
+      select(product_rxcui, route, dose_form, dose_form_group),
+    by = "product_rxcui"
+  ) |>
+  filter(is.na(route) | route != "ORAL") |>
+  select(
+    ingredient_name,
+    product_rxcui,
+    name,
+    tty,
+    route,
+    dose_form,
+    dose_form_group
+  ) |>
+  arrange(ingredient_name, route, name) |>
+  head(30)
+```
 
-```{r filter}
-if (run_live) {
-  bb_oral_products <- bb_products |>
-    filter_products_by_route(route = "ORAL")
-} else {
-  bb_oral_products <- read_rxref_example("bb_oral_products.rds")
-}
+This inspection step is especially useful when working with a medication
+class for which route heterogeneity is clinically important.
+
+## Step 4: Filter to oral products
+
+Once we have confirmed that the unfiltered product set contains multiple
+routes, use `filter_products_by_route()` to retain only oral products.
+
+```{r filter, eval = FALSE}
+bb_oral_products <- bb_products |>
+  filter_products_by_route(route = "ORAL")
 
 bb_oral_products
 ```
 
-The returned table keeps product-level metadata and appends summarized
-route and dose-form information.
+```{r filter-data, include = FALSE}
+bb_oral_products <- read_rxref_example("bb_oral_products.rds")
+```
+
+```{r filter-output, echo = FALSE}
+bb_oral_products |>
+  arrange(ingredient_name, tty, name) |>
+  head(30)
+```
+
+The returned table preserves the product-level information and appends
+summarized route, dose-form, and dose-form-group fields.
 
 ```{r filter-summary}
 bb_oral_products |>
   count(route, dose_form_group, sort = TRUE)
 ```
 
-This should retain products such as oral tablets, capsules, and oral
-solutions, while excluding injectable or ophthalmic products.
+Route filtering depends on clinical attribute information available for a
+product RxCUI. A product without a route match is not retained, so
+route-specific medication lists should always be reviewed before they are
+used in an analysis.
 
-Route filtering relies on clinical attribute information available
-through RxNorm. If a product concept lacks route or dose-form
-information, it may not be retained by route-specific filters. This is
-especially important when historical concepts are included.
+## Step 5: Map oral product RxCUIs to active NDCs
 
-## Map oral product RxCUIs to active NDCs
+After restricting the RxCUI definition to oral products, map those
+products to NDCs.
 
-Once the product list is restricted to oral products, use
-`map_rxcui_to_ndc()` to map the product RxCUIs to NDCs.
+For a current medication list, we use current NDC associations and retain
+NDCs whose reported status is `"ACTIVE"`.
 
-```{r map}
-if (run_live) {
-  bb_oral_ndc_map <- map_rxcui_to_ndc(
-    unique(bb_oral_products$product_rxcui),
-    status = "ACTIVE"
-  )
+```{r map, eval = FALSE}
+bb_oral_ndc_map <- map_rxcui_to_ndc(
+  unique(bb_oral_products$product_rxcui),
+  history = "active",
+  status = "ACTIVE"
+)
 
-  bb_oral_ndcs <- bb_oral_ndc_map |>
-    left_join(
-      bb_oral_products,
-      by = c("rxcui" = "product_rxcui")
-    ) |>
-    rename(
-      product_rxcui = rxcui,
-    ) |>
-    distinct()
-} else {
-  bb_oral_ndcs <- read_rxref_example("bb_oral_ndcs.rds")
-}
+bb_oral_ndcs <- bb_oral_ndc_map |>
+  left_join(
+    bb_oral_products,
+    by = c("rxcui" = "product_rxcui")
+  ) |>
+  rename(product_rxcui = rxcui) |>
+  distinct()
 
 bb_oral_ndcs
 ```
 
-The output is a flat tibble with one row per product RxCUI/NDC pair.
-Product metadata is retained alongside the NDC.
+```{r map-data, include = FALSE}
+bb_oral_ndcs <- read_rxref_example("bb_oral_ndcs.rds")
+```
 
-```{r map-select}
+```{r map-output, echo = FALSE}
 bb_oral_ndcs |>
   select(
     ingredient_name,
@@ -305,32 +299,68 @@ bb_oral_ndcs |>
     dose_form,
     ndc11,
     ndc_status
+  ) |>
+  arrange(ingredient_name, product_rxcui, ndc11) |>
+  head(30)
+```
+
+At this point, we have two useful study resources:
+
+- `bb_oral_products`, containing the route-restricted RxCUI definition;
+  and
+- `bb_oral_ndcs`, containing the corresponding active NDC mappings.
+
+Keeping both can be useful when the medication definition will be applied
+to data sources that use different drug identifiers.
+
+## Quality-control checks
+
+Route-specific medication definitions benefit from several simple quality
+checks before they are finalized.
+
+### Confirm the observed routes
+
+```{r qc-routes}
+bb_oral_products |>
+  count(route, dose_form_group, sort = TRUE)
+```
+
+For this definition, every retained product should have an oral route
+assignment.
+
+### Look for non-oral terminology in product names
+
+A name-based check is not a substitute for structured route filtering,
+but it is a useful secondary screen.
+
+```{r qc-nonoral-names}
+bb_oral_products |>
+  filter(grepl(
+    "Injection|Injectable|Ophthalmic|Topical|Transdermal|Nasal|Inhalation",
+    name,
+    ignore.case = TRUE
+  )) |>
+  select(
+    ingredient_name,
+    product_rxcui,
+    name,
+    tty,
+    route,
+    dose_form
   )
 ```
 
-The `status = "ACTIVE"` argument controls the NDC status returned by
-`map_rxcui_to_ndc()`. This is distinct from `concept_status`, which
-controls whether active or historical RxNorm concepts are included during
-product expansion.
+Unexpected rows should be reviewed rather than automatically removed,
+because product naming conventions do not always map perfectly to route. And,
+again, sometimes RxNorm has mistakes in the source data that will eventually
+get corrected.
 
-## Summarize the resulting list
+### Review combination products
 
-For quality control, it is useful to summarize the number of products and
-NDCs by ingredient.
+Because this example retained combination products, inspect them
+explicitly:
 
-```{r summarize-products}
-bb_oral_products |>
-  count(ingredient_name, sort = TRUE, name = "n_product_rxcuis")
-```
-
-```{r summarize-ndcs}
-bb_oral_ndcs |>
-  count(ingredient_name, sort = TRUE, name = "n_active_ndcs")
-```
-
-You may also want to inspect combination products separately.
-
-```{r summarize-combinations}
+```{r qc-combinations}
 bb_oral_products |>
   filter(n_ingredients > 1) |>
   select(
@@ -341,177 +371,23 @@ bb_oral_products |>
     n_ingredients,
     route,
     dose_form
-  )
+  ) |>
+  arrange(ingredient_name, name)
 ```
 
-Depending on the scientific question, combination products may be
-appropriate to include or exclude. For example, beta-blocker/thiazide
-combination products may be relevant for antihypertensive exposure
-definitions but not for studies focused on beta-blocker monotherapy.
-
-## A shortcut using `search_drug()`
-
-The same core workflow can be run more compactly with `search_drug()`.
-This function combines ingredient searching, product expansion, optional
-route filtering, and optional NDC mapping.
-
-To return oral product RxCUIs only:
-
-```{r alt-search-rxcui}
-if (run_live) {
-  bb_oral_rxcuis <- search_drug(
-    beta_blocker_names,
-    return = "rxcui",
-    route = "ORAL",
-    include_combos = TRUE,
-    concept_status = "active"
-  )
-} else {
-  bb_oral_rxcuis <- read_rxref_example("bb_oral_rxcuis_search.rds")
-}
-
-bb_oral_rxcuis
-```
-
-To return a flat table of oral product RxCUIs and active NDCs:
-
-```{r alt-search-ndc}
-if (run_live) {
-  bb_oral_ndcs_search_raw <- search_drug(
-    beta_blocker_names,
-    return = "ndc",
-    route = "ORAL",
-    ndc_status = "ACTIVE",
-    include_combos = TRUE,
-    concept_status = "active"
-  )
-
-  bb_oral_ndcs_search <- bb_oral_ndcs_search_raw
-
-  if (!"ingredient_name" %in% names(bb_oral_ndcs_search)) {
-    bb_oral_ndcs_search <- bb_oral_ndcs_search |>
-      left_join(
-        bb_ingredients |>
-          select(ingredient_rxcui, ingredient_name),
-        by = "ingredient_rxcui"
-      )
-  }
-
-  product_cols <- c(
-    "name",
-    "tty",
-    "route",
-    "dose_form",
-    "dose_form_group"
-  )
-
-  missing_product_cols <- setdiff(product_cols, names(bb_oral_ndcs_search))
-
-  if (length(missing_product_cols) > 0) {
-    bb_oral_ndcs_search <- bb_oral_ndcs_search |>
-      left_join(
-        bb_oral_products |>
-          select(
-            ingredient_rxcui,
-            product_rxcui,
-            all_of(missing_product_cols)
-          ),
-        by = c("ingredient_rxcui", "product_rxcui")
-      )
-  }
-
-  bb_oral_ndcs_search <- bb_oral_ndcs_search |>
-    distinct()
-} else {
-  bb_oral_ndcs_search <- read_rxref_example("bb_oral_ndcs_search.rds")
-}
-
-bb_oral_ndcs_search
-```
-
-The raw `search_drug(return = "ndc")` output is intentionally compact. In
-this vignette, we join it back to the ingredient and product tables so
-that the displayed example includes readable ingredient names, product
-names, routes, and dose forms.
-
-## Returning both products and NDCs
-
-If you want both the unique product RxCUI table and the expanded NDC
-table, use `return = "both"`.
-
-```{r products-and-ndcs}
-if (run_live) {
-  bb_oral_both <- search_drug(
-    beta_blocker_names,
-    return = "both",
-    route = "ORAL",
-    ndc_status = "ACTIVE",
-    include_combos = TRUE,
-    concept_status = "active"
-  )
-} else {
-  bb_oral_both <- read_rxref_example("bb_oral_both_search.rds")
-}
-
-names(bb_oral_both)
-```
-
-This returns a list because the two tables have different grains:
-
-- `products`: one row per product RxCUI;
-- `ndcs`: one row per product RxCUI/NDC pair.
-
-```{r products-and-ndcs-products}
-bb_oral_both$products
-```
-
-```{r products-and-ndcs-ndcs}
-bb_oral_both$ndcs
-```
-
-## Suggested QC checks
-
-When developing a study-specific medication list, it is good practice to
-review the resulting concepts before finalizing the cohort definition.
-Even if the package is working correctly, RxNorm concepts and source data
-may occasionally contain surprises for a specific study use case.
-
-The following are some examples.
-
-### Check whether any non-oral product names remain
-
-```{r qc-nonoral-names}
-bb_oral_products |>
-  filter(grepl(
-    "Injection|Injectable|Ophthalmic|Topical|Transdermal|Nasal|Inhalation",
-    name,
-    ignore.case = TRUE
-  ))
-```
-
-### Check the observed routes and dose-form groups
-
-```{r qc-routes}
-bb_oral_products |>
-  count(route, dose_form_group, sort = TRUE)
-```
-
-### Check combination products
-
-```{r qc-combinations}
-bb_oral_products |>
-  filter(n_ingredients > 1) |>
-  count(ingredient_name, sort = TRUE)
-```
+For example, beta-blocker/thiazide combination products may be appropriate
+for a broad antihypertensive exposure definition but inappropriate for a
+study specifically evaluating beta-blocker monotherapy.
 
 ### Check products without active NDCs
 
-Some product RxCUIs may not map to active NDCs.
+Some valid RxNorm product concepts may not map to a current active NDC.
 
 ```{r qc-without-ndcs}
 bb_oral_products |>
   anti_join(
     bb_oral_ndcs |>
+      filter(!is.na(ndc11)) |>
       distinct(product_rxcui),
     by = "product_rxcui"
   ) |>
@@ -522,34 +398,182 @@ bb_oral_products |>
     tty,
     route,
     dose_form
-  )
+  ) |>
+  arrange(ingredient_name, name)
 ```
 
-## Summary
+Whether products without active NDCs matter depends on the identifiers
+available in the study data.
 
-This vignette demonstrated how to build a route-specific medication list,
-with oral beta-blockers as an example, using `rxref`.
+### Summarize the final definition
 
-The key steps are:
+Finally, summarize the number of unique products and NDCs associated with
+each ingredient:
 
-1. `find_ingredients()` to resolve drug names to ingredient RxCUIs;
-2. `products_for_ingredients()` to expand ingredients to product RxCUIs;
-3. `filter_products_by_route()` to retain products for the route of
-   interest;
-4. `map_rxcui_to_ndc()` to obtain NDCs; or
-5. `search_drug()` for a compact end-to-end workflow.
+```{r qc-counts}
+bb_oral_ndcs |>
+  group_by(ingredient_name) |>
+  summarise(
+    n_products = n_distinct(product_rxcui),
+    n_ndcs = n_distinct(ndc11, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  arrange(ingredient_name)
+```
 
-For drug classes with products available through multiple routes, route
-filtering is an important quality-control step before mapping to NDCs or
-using the resulting list in pharmacoepidemiologic analyses.
+## A compact alternative with `search_drug()`
 
-Users should also distinguish between two separate choices:
+Once the explicit workflow is understood, `search_drug()` can combine
+ingredient resolution, product expansion, route filtering, and NDC
+mapping in a single call.
 
-- `concept_status` controls whether active or historical RxNorm concepts
-  are included.
-- `status` or `ndc_status` controls which NDC status categories are
-  returned.
+Using `return = "both"` is particularly useful here because the product
+table and the NDC table have different grains.
 
-For reproducible research, save the final product list, NDC list, package
-version, and API-derived outputs used in the analytic workflow.
+```{r shortcut, eval = FALSE}
+bb_oral <- search_drug(
+  beta_blocker_names,
+  return = "both",
+  route = "ORAL",
+  ndc_status = "ACTIVE",
+  include_combos = TRUE,
+  concept_status = "active"
+)
 
+bb_oral$products
+bb_oral$ndcs
+```
+
+```{r shortcut-data, include = FALSE}
+bb_oral <- read_rxref_example("bb_oral_both_search.rds")
+```
+
+The result is a list with separate product and NDC tables:
+
+```{r shortcut-names}
+names(bb_oral)
+```
+
+```{r shortcut-products}
+bb_oral$products |>
+  arrange(ingredient_rxcui, tty, name) |>
+  head(20)
+```
+
+```{r shortcut-ndcs}
+bb_oral$ndcs |>
+  arrange(ingredient_rxcui, product_rxcui, ndc11) |>
+  head(20)
+```
+
+The shortcut is useful when the standard workflow matches the study
+definition. The explicit approach remains preferable when users need to
+inspect route heterogeneity before filtering, modify the product set, or
+document study-specific inclusion and exclusion decisions.
+
+## Adapting the workflow
+
+The example above represents one particular route-specific medication
+definition. Several common modifications are possible.
+
+### Filter by route during product expansion
+
+When users already know the intended route and do not need to inspect the
+unfiltered product universe first, `products_for_ingredients()` can apply
+the route restriction directly:
+
+```{r direct-route-filter, eval = FALSE}
+bb_oral_products_direct <- products_for_ingredients(
+  bb_ingredients$ingredient_rxcui,
+  ttys = product_ttys("default"),
+  route = "ORAL",
+  include_combos = TRUE,
+  concept_status = "active"
+)
+```
+
+This uses the same route-filtering infrastructure but provides a more
+compact workflow.
+
+### Exclude fixed-dose combination products
+
+If the study should include beta-blocker single drug entities (i.e., not 
+combination products) only, set `include_combos = FALSE`:
+
+```{r exclude-combinations, eval = FALSE}
+bb_oral_single_products <- products_for_ingredients(
+  bb_ingredients$ingredient_rxcui,
+  ttys = product_ttys("default"),
+  route = "ORAL",
+  include_combos = FALSE,
+  concept_status = "active"
+)
+```
+
+Alternatively, retain combination products initially, review them, and
+apply study-specific exclusions after product expansion.
+
+### Include historical RxNorm concepts and NDC associations
+
+For older study periods, users may need concepts that are no longer
+active in the current RxNorm release.
+
+Historical RxNorm product concepts can be included with:
+
+```{r historical-products, eval = FALSE}
+bb_products_historical <- products_for_ingredients(
+  bb_ingredients$ingredient_rxcui,
+  ttys = product_ttys("default"),
+  include_combos = TRUE,
+  concept_status = "active_and_historical"
+)
+
+bb_oral_products_historical <- bb_products_historical |>
+  filter_products_by_route(route = "ORAL")
+```
+
+`filter_products_by_route()` can use historical RxCUI metadata as a
+fallback when the product table contains non-active concepts. Even so,
+historical route assignments deserve careful review because clinical
+attribute information may be less complete for older concepts.
+
+Historical NDC associations are a separate choice. Retrieve them with the
+`history` argument in `map_rxcui_to_ndc()`:
+
+```{r historical-ndcs, eval = FALSE}
+bb_oral_ndcs_historical <- map_rxcui_to_ndc(
+  unique(bb_oral_products_historical$product_rxcui),
+  history = "all"
+)
+```
+
+The distinction is important:
+
+- `concept_status` determines whether product expansion includes
+  historical RxNorm concepts;
+- `history` determines whether RxCUI-to-NDC mapping uses current or
+  historical NDC associations; and
+- `status` filters NDCs after those associations have been retrieved.
+
+`search_drug()` is convenient for current route-specific medication lists,
+but it does not currently expose the NDC `history` argument. For studies
+requiring historical NDC associations, use the explicit
+`products_for_ingredients()` plus `map_rxcui_to_ndc()` workflow.
+
+## Finalizing a route-specific medication definition
+
+Before using a route-specific medication list in an analysis, consider:
+
+- whether the ingredient list matches the intended clinical definition;
+- whether the selected route is represented correctly across products;
+- whether combination products should be included;
+- whether the default product TTYs are sufficient;
+- whether products without route information require manual review;
+- whether products without active NDCs matter for the source data; and
+- whether the study period requires historical RxNorm concepts or NDC
+  associations.
+
+For reproducible research, save the final product and NDC tables used in
+the analysis rather than rebuilding them each time. It is also useful to
+record the `rxref` version and the date on which the medication definition
+was generated.
