@@ -1,3 +1,23 @@
+# rxref (development version)
+
+## Improvements
+
+* Enhanced `get_class_members()` to accept multiple RxClass relationships
+  through a character vector supplied to `rela`. Each relationship is
+  queried separately, and results are combined, preserving the
+  originating relationship in output.
+* Added informative warning when `get_class_members()` returns no
+  results for non-ATC sources without an explicitly specified relationship.
+* Expanded documentation for `get_class_members()` to explain
+  source-specific relationship requirements, including examples for
+  MED-RT and VA classes.
+
+## Bug fixes
+
+* Fixed `rxclass_relas()` incorrectly returning empty results because
+  of an incorrect JSON response field. The function now correctly
+  retrieves available RxClass relationships for a specified source.
+
 # rxref 0.5.0
 
 ## Improvements
