@@ -793,7 +793,7 @@ rxclass_relas <- function(rela_source) {
     query = list(relaSource = rela_source)
   )
 
-  relas <- rx_pluck_chr(res, "relaList", "relaName")
+  relas <- rx_pluck_chr(res, "relaList", "rela")
 
   if (is.null(relas) || length(relas) == 0) {
     return(tibble::tibble(
