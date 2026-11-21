@@ -590,21 +590,69 @@ find_classes <- function(query, class_types = NULL) {
 
 #' Get RxNorm members of an RxClass class
 #'
-#' `get_class_members()` queries the RxClass API to identify members of a
-#' specific drug class. Typically, this would be used to identify all
-#' ingredient RxCUIs in a class, which can then be combined with other search
-#' functions to extract related product RxCUIs or NDCs.
+#' @description
+#' `get_class_members()` queries the RxClass API to identify RxNorm drugs
+#' associated with a specific drug class. Depending on the relationship source,
+#' returned members may represent ingredients, clinical drugs, branded products,
+#' or other RxNorm concepts.
 #'
-#' @param class_id RxClass class identifier.
+#' @details
+#' RxClass organizes drug-class membership using source-specific relationships.
+#' For ATC and ATCPROD, the `rela` argument can generally be omitted.
+#' Other sources, such as MEDRT and VA, use named relationships that may
+#' need to be specified explicitly.
+#'
+#' For example, MEDRT associates drugs with diseases through distinct
+#' relationships, including `may_treat` and `CI_with`. These represent
+#' different clinical assertions and should not be interpreted as equivalent.
+#'
+#' Use [rxclass_relas()] to identify relationship types supported by a source.
+#'
+#' Multiple relationships can be supplied as a character vector. Each
+#' relationship is queried separately, and results are combined while
+#' preserving the originating relationship in the `rela` column.
+#'
+#' If `rela = NULL` (default), no relationship filter is sent to the API.
+#' For non-ATC sources, a warning is issued when this produces no members,
+#' since an omitted relationship may explain the empty result.
+#'
+#' @param class_id Character string identifying an RxClass class.
 #' @param rela_source RxClass relationship source, such as `"ATC"`,
 #'   `"ATCPROD"`, `"DAILYMED"`, `"FDASPL"`, `"MEDRT"`, `"SNOMEDCT"`, or `"VA"`.
-#' @param rela Optional relationship filter.
-#' @param include_indirect Logical; if `TRUE`, include direct and indirect
-#'   members. If `FALSE`, return direct members only.
-#' @param ttys Optional RxNorm term type filter, such as `"IN"`, `"PIN"`,
-#'   `"SCD"`, or `"SBD"`.
+#' @param rela Optional character vector of RxClass relationship types. When
+#'   multiple relationships are supplied, each is queried separately and the
+#'   results are combined, preserving the relationship associated with each
+#'   returned member. If `NULL`, no relationship filter is sent.
+#' @param include_indirect Logical. If `TRUE` (default), include direct and
+#'   indirect members. If `FALSE`, return direct members only.
+#' @param ttys Optional character vector of RxNorm term types to retrieve,
+#'   such as `"IN"`, `"PIN"`, `"SCD"`, or `"SBD"`.
 #'
-#' @return A tibble of RxNorm drug members.
+#' @return A tibble containing RxNorm class members, including their RxCUIs,
+#'   names, term types, class identifiers, relationship sources, and
+#'   relationships. Additional columns describe source-specific membership
+#'   attributes when available.
+#'
+#' @seealso [find_classes()], [get_classes()], [rxclass_relas()]
+#'
+#' @examples
+#' if (identical(Sys.getenv("RXREF_ONLINE"), "1")) {
+#'   # ATC class membership
+#'   get_class_members("C02", "ATCPROD")
+#'
+#'   # MED-RT: drugs associated with treating hypertension
+#'   get_class_members("D006973", "MEDRT", rela = "may_treat")
+#'
+#'   # MED-RT: retrieve multiple relationships
+#'   get_class_members(
+#'     "D006973", "MEDRT",
+#'     rela = c("may_treat", "CI_with")
+#'   )
+#'
+#'   # VA drug class membership
+#'   get_class_members("CV400", "VA", rela = "has_VAClass")
+#' }
+#'
 #' @export
 get_class_members <- function(class_id,
                               rela_source,
@@ -614,31 +662,70 @@ get_class_members <- function(class_id,
   stopifnot(is.character(class_id), length(class_id) == 1)
   stopifnot(is.character(rela_source), length(rela_source) == 1)
 
-  q <- list(
+  # Validate relationship values
+  if (!is.null(rela)) {
+    if (!is.character(rela) ||
+        length(rela) == 0L ||
+        anyNA(rela) ||
+        any(!nzchar(rela))) {
+      cli::cli_abort(
+        "{.arg rela} must be NULL or a non-empty character vector without missing values."
+      )
+    }
+  }
+
+  # Preserve existing behavior when rela is omitted
+  rela_values <- if (is.null(rela)) {
+    NA_character_
+  } else {
+    unique(rela)
+  }
+
+  # Base query parameters
+  q_base <- list(
     classId = class_id,
     relaSource = rela_source,
     trans = if (isTRUE(include_indirect)) "0" else "1"
   )
 
-  if (!is.null(rela)) {
-    q$rela <- rela
-  }
-
   if (!is.null(ttys)) {
-    q$ttys <- .rxclass_collapse_query(ttys)
+    q_base$ttys <- .rxclass_collapse_query(ttys)
   }
 
-  res <- rxclass_get_json(
-    "/classMembers",
-    query = q
-  )
+  # Query each relationship separately and combine results
+  out <- purrr::map(rela_values, function(.rela) {
+    q <- q_base
 
-  parse_rxclass_members(
-    res = res,
-    class_id = class_id,
-    rela_source = rela_source,
-    rela = rela
-  )
+    if (!is.na(.rela)) {
+      q$rela <- .rela
+    }
+
+    res <- rxclass_get_json(
+      "/classMembers",
+      query = q
+    )
+
+    parse_rxclass_members(
+      res = res,
+      class_id = class_id,
+      rela_source = rela_source,
+      rela = .rela
+    )
+  }) |>
+    purrr::list_rbind()
+
+  # Diagnostic warning when an omitted relationship may explain empty results
+  if (is.null(rela) &&
+      !toupper(rela_source) %in% c("ATC", "ATCPROD") &&
+      nrow(out) == 0L) {
+    cli::cli_warn(c(
+      "No class members returned for class {.val {class_id}} from {.val {rela_source}}.",
+      "i" = "This source may require an explicit {.arg rela} argument.",
+      "i" = "Use {.fn rxclass_relas} to inspect available relationships."
+    ))
+  }
+
+  out
 }
 
 #' Summarize RxClass relationship types for drugs
@@ -706,7 +793,7 @@ rxclass_relas <- function(rela_source) {
     query = list(relaSource = rela_source)
   )
 
-  relas <- rx_pluck_chr(res, "relaList", "relaName")
+  relas <- rx_pluck_chr(res, "relaList", "rela")
 
   if (is.null(relas) || length(relas) == 0) {
     return(tibble::tibble(
