@@ -598,7 +598,10 @@ find_classes <- function(query, class_types = NULL) {
 #' @param class_id RxClass class identifier.
 #' @param rela_source RxClass relationship source, such as `"ATC"`,
 #'   `"ATCPROD"`, `"DAILYMED"`, `"FDASPL"`, `"MEDRT"`, `"SNOMEDCT"`, or `"VA"`.
-#' @param rela Optional relationship filter.
+#' @param rela Optional character vector of RxClass relationship types. When
+#'   multiple relationships are supplied, each is queried separately and the
+#'   results are combined, preserving the relationship associated with each
+#'   returned member. If `NULL`, no relationship filter is sent.
 #' @param include_indirect Logical; if `TRUE`, include direct and indirect
 #'   members. If `FALSE`, return direct members only.
 #' @param ttys Optional RxNorm term type filter, such as `"IN"`, `"PIN"`,
@@ -614,31 +617,57 @@ get_class_members <- function(class_id,
   stopifnot(is.character(class_id), length(class_id) == 1)
   stopifnot(is.character(rela_source), length(rela_source) == 1)
 
-  q <- list(
+  # Validate relationship values
+  if (!is.null(rela)) {
+    if (!is.character(rela) ||
+        length(rela) == 0L ||
+        anyNA(rela) ||
+        any(!nzchar(rela))) {
+      cli::cli_abort(
+        "{.arg rela} must be NULL or a non-empty character vector without missing values."
+      )
+    }
+  }
+
+  # Preserve existing behavior when rela is omitted
+  rela_values <- if (is.null(rela)) {
+    NA_character_
+  } else {
+    unique(rela)
+  }
+
+  # Base query parameters
+  q_base <- list(
     classId = class_id,
     relaSource = rela_source,
     trans = if (isTRUE(include_indirect)) "0" else "1"
   )
 
-  if (!is.null(rela)) {
-    q$rela <- rela
-  }
-
   if (!is.null(ttys)) {
-    q$ttys <- .rxclass_collapse_query(ttys)
+    q_base$ttys <- .rxclass_collapse_query(ttys)
   }
 
-  res <- rxclass_get_json(
-    "/classMembers",
-    query = q
-  )
+  # Query each relationship separately and combine results
+  purrr::map(rela_values, function(.rela) {
+    q <- q_base
 
-  parse_rxclass_members(
-    res = res,
-    class_id = class_id,
-    rela_source = rela_source,
-    rela = rela
-  )
+    if (!is.na(.rela)) {
+      q$rela <- .rela
+    }
+
+    res <- rxclass_get_json(
+      "/classMembers",
+      query = q
+    )
+
+    parse_rxclass_members(
+      res = res,
+      class_id = class_id,
+      rela_source = rela_source,
+      rela = .rela
+    )
+  }) |>
+    purrr::list_rbind()
 }
 
 #' Summarize RxClass relationship types for drugs
