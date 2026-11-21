@@ -1,6 +1,6 @@
 Package: rxref
 Title: Tidy Utilities for 'RxNorm' and NDC Resolution
-Version: 0.5.0
+Version: 0.5.1
 Authors@R:
 	c(person(
 	given = "Steven", 

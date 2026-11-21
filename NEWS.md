@@ -1,4 +1,4 @@
-# rxref (development version)
+# rxref 0.5.1
 
 ## Improvements
 
